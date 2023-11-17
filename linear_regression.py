@@ -40,12 +40,33 @@ labels.loc[troughs, 'Label'] = 'Buy'
 # Merging the FFT features and labels with the Forex data
 final_dataset = forex_data.join(fft_features).join(labels)
 
+# Calculating Moving Averages and RSI manually
+def calculate_rsi(data, window=14):
+    """ Calculate the Relative Strength Index (RSI) for a given dataset and window """
+    delta = data['Close'].diff()
+    gain = (delta.where(delta > 0, 0)).rolling(window=window).mean()
+    loss = (-delta.where(delta < 0, 0)).rolling(window=window).mean()
+
+    rs = gain / loss
+    rsi = 100 - (100 / (1 + rs))
+    return rsi
+
+short_window = 5
+long_window = 20
+rsi_period = 14
+forex_data['Short_Moving_Avg'] = forex_data['Close'].rolling(window=short_window).mean()
+forex_data['Long_Moving_Avg'] = forex_data['Close'].rolling(window=long_window).mean()
+forex_data['RSI'] = calculate_rsi(forex_data, window=rsi_period)
+
+# Merging the new features into the final dataset
+final_dataset_with_new_features = final_dataset.join(forex_data[['Short_Moving_Avg', 'Long_Moving_Avg', 'RSI']])
+
 # Data Preprocessing
-final_dataset.fillna({'Frequency': 0, 'Amplitude': 0, 'DaysPerCycle': 0}, inplace=True)
-final_dataset.dropna(subset=['Label'], inplace=True)
-final_dataset['Label'] = final_dataset['Label'].map({'Buy': 1, 'Sell': 0})
-X = final_dataset[['Frequency', 'Amplitude', 'DaysPerCycle']]
-y = final_dataset['Label']
+final_dataset_with_new_features.dropna(inplace=True)
+X = final_dataset_with_new_features[['Frequency', 'Amplitude', 'DaysPerCycle', 'Short_Moving_Avg', 'Long_Moving_Avg', 'RSI']]
+y = final_dataset_with_new_features['Label']
+
+# Splitting the dataset and standardizing features
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
 scaler = StandardScaler()
 X_train_scaled = scaler.fit_transform(X_train)
@@ -55,30 +76,41 @@ X_test_scaled = scaler.transform(X_test)
 logreg = LogisticRegression()
 logreg.fit(X_train_scaled, y_train)
 
-# Model Evaluation
-y_pred = logreg.predict(X_test_scaled)
-print(classification_report(y_test, y_pred))
-print(confusion_matrix(y_test, y_pred))
+# Predicting labels using the logistic regression model
+final_dataset_with_new_features['PredictedLabel'] = logreg.predict(scaler.transform(X))
 
-# Backtesting the trading strategy
-backtest_dataset = final_dataset.copy()
-backtest_dataset['PredictedLabel'] = logreg.predict(scaler.transform(backtest_dataset[['Frequency', 'Amplitude', 'DaysPerCycle']]))
-
+# Backtesting with stop-loss and take-profit
+stop_loss_threshold = 0.05  # 5% drop from buying price
+take_profit_threshold = 0.05  # 5% rise from buying price
 cash = 10000  # Starting cash
 shares = 0    # Number of shares held
 trade_log = []  # Log of trades
 
-for index, row in backtest_dataset.iterrows():
-    if row['PredictedLabel'] == 1 and cash >= row['Open']:
-        num_shares_to_buy = int(cash / row['Open'])
+for index, row in final_dataset_with_new_features.iterrows():
+    current_price = row['Open']
+    if shares > 0:
+        change_percentage = (current_price - buy_price) / buy_price
+        if change_percentage <= -stop_loss_threshold or change_percentage >= take_profit_threshold:
+            cash += shares * current_price
+            trade_log.append(f"Sell {shares} shares at {current_price} on {row['Date']} (Stop-loss/Take-profit triggered)")
+            shares = 0
+            continue
+
+    # Model-based trading decisions
+    if row['PredictedLabel'] == 1 and cash >= current_price:  # Buy signal
+        num_shares_to_buy = int(cash / current_price)
         shares += num_shares_to_buy
-        cash -= num_shares_to_buy * row['Open']
-        trade_log.append(f"Buy {num_shares_to_buy} shares at {row['Open']} on {row['Date']}")
-    elif row['PredictedLabel'] == 0 and shares > 0:
-        cash += shares * row['Open']
-        trade_log.append(f"Sell {shares} shares at {row['Open']} on {row['Date']}")
+        cash -= num_shares_to_buy * current_price
+        buy_price = current_price
+        trade_log.append(f"Buy {num_shares_to_buy} shares at {current_price} on {row['Date']}")
+    elif row['PredictedLabel'] == 0 and shares > 0:  # Sell signal
+        cash += shares * current_price
+        trade_log.append(f"Sell {shares} shares at {current_price} on {row['Date']} (Model signal)")
         shares = 0
 
-final_portfolio_value = cash + shares * backtest_dataset.iloc[-1]['Open']
+# Calculate final portfolio value
+final_portfolio_value = cash + shares * final_dataset_with_new_features.iloc[-1]['Open']
+
+# Output
 print(trade_log[:10])  # Display first 10 trades
 print(f"Final Portfolio Value: {final_portfolio_value}")

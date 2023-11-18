@@ -33,16 +33,27 @@ fft_features = pd.DataFrame({
 # Peak and Trough Detection for Labeling
 peaks, _ = find_peaks(close_prices)
 troughs, _ = find_peaks(-1 * close_prices)
+mid_trend = [i for i in range(len(close_prices))]
+print("check mid_trend: ", mid_trend)
+for peak in peaks:
+    mid_trend.remove(peak)
+for trough in troughs:
+    mid_trend.remove(trough)
+print("check mid_trend1: ", mid_trend)
 labels = pd.DataFrame(index=range(len(close_prices)), columns=['Label'])
+print("labels: ", labels)
+for label in labels:
+    print("c: ", label)
 labels.loc[peaks, 'Label'] = 'Sell'
 labels.loc[troughs, 'Label'] = 'Buy'
+labels.loc[mid_trend, 'Label'] = 'Hold'
 
 print("fft_features: ", fft_features)
 print("forex_data: ", forex_data)
 print("labels: ", labels)
 # Merging the FFT features and labels with the Forex data
-final_dataset = forex_data.join(fft_features).join(labels)
-
+# final_dataset = forex_data.join(fft_features).join(labels)
+final_dataset = forex_data.join(labels)
 print("check final_dataset: ", final_dataset)
 
 print("***")
@@ -65,13 +76,17 @@ rsi_period = 14
 forex_data['Short_Moving_Avg'] = forex_data['Close'].rolling(window=short_window).mean()
 forex_data['Long_Moving_Avg'] = forex_data['Close'].rolling(window=long_window).mean()
 forex_data['RSI'] = calculate_rsi(forex_data, window=rsi_period)
-
+print("forex_data1: ", forex_data)
 # Merging the new features into the final dataset
 final_dataset_with_new_features = final_dataset.join(forex_data[['Short_Moving_Avg', 'Long_Moving_Avg', 'RSI']])
+print("check final_dataset_with_new_features: ", final_dataset_with_new_features)
 
 # Data Preprocessing
 final_dataset_with_new_features.dropna(inplace=True)
-X = final_dataset_with_new_features[['Frequency', 'Amplitude', 'DaysPerCycle', 'Short_Moving_Avg', 'Long_Moving_Avg', 'RSI']]
+final_dataset_with_new_features.to_csv('final_dataset_with_new_features.csv')
+# print("check final_dataset_with_new_features: ", final_dataset_with_new_features)
+# X = final_dataset_with_new_features[['Frequency', 'Amplitude', 'DaysPerCycle', 'Short_Moving_Avg', 'Long_Moving_Avg', 'RSI']]
+X = final_dataset_with_new_features[['Short_Moving_Avg', 'Long_Moving_Avg', 'RSI']]
 y = final_dataset_with_new_features['Label']
 
 # Splitting the dataset and standardizing features
@@ -91,7 +106,7 @@ final_dataset_with_new_features['PredictedLabel'] = logreg.predict(scaler.transf
 stop_loss_threshold = 0.05  # 5% drop from buying price
 take_profit_threshold = 0.05  # 5% rise from buying price
 cash = 10000  # Starting cash
-trading_lot = 2500
+trading_lot = 1000
 shares = 0    # Number of shares held
 trade_log = []  # Log of trades
 
@@ -111,7 +126,7 @@ for index, row in final_dataset_with_new_features.iterrows():
             continue
 
     # Model-based trading decisions
-    if row['PredictedLabel'] == 'Buy' and cash >= current_price:  # Buy signal
+    if row['PredictedLabel'] == 'Hold' and cash >= current_price:  # Buy signal
         # num_shares_to_buy = int(cash / current_price)
         num_shares_to_buy = int(trading_lot / current_price)
         shares += num_shares_to_buy

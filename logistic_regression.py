@@ -91,12 +91,14 @@ y = final_dataset_with_new_features['Label']
 
 # Splitting the dataset and standardizing features
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+print("y_train value counts: ", y_train.value_counts())
 scaler = StandardScaler()
 X_train_scaled = scaler.fit_transform(X_train)
 X_test_scaled = scaler.transform(X_test)
 
 # Logistic Regression Model
-logreg = LogisticRegression()
+# logreg = LogisticRegression()
+logreg = LogisticRegression(class_weight='balanced')
 logreg.fit(X_train_scaled, y_train)
 
 # Predicting labels using the logistic regression model
@@ -106,7 +108,7 @@ final_dataset_with_new_features['PredictedLabel'] = logreg.predict(scaler.transf
 stop_loss_threshold = 0.05  # 5% drop from buying price
 take_profit_threshold = 0.05  # 5% rise from buying price
 cash = 10000  # Starting cash
-trading_lot = 1000
+trading_lot = 2000
 shares = 0    # Number of shares held
 trade_log = []  # Log of trades
 
@@ -126,7 +128,7 @@ for index, row in final_dataset_with_new_features.iterrows():
             continue
 
     # Model-based trading decisions
-    if row['PredictedLabel'] == 'Hold' and cash >= current_price:  # Buy signal
+    if row['PredictedLabel'] == 'Buy' and cash >= current_price:  # Buy signal
         # num_shares_to_buy = int(cash / current_price)
         num_shares_to_buy = int(trading_lot / current_price)
         shares += num_shares_to_buy

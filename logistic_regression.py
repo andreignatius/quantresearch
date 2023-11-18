@@ -6,6 +6,9 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import classification_report, confusion_matrix
+from sklearn.metrics import accuracy_score
+from sklearn.metrics import roc_curve, auc
+from sklearn.model_selection import cross_val_score
 
 # Load the Forex data
 file_path = 'USD_JPY.csv'
@@ -91,13 +94,34 @@ y = final_dataset_with_new_features['Label']
 
 # Splitting the dataset and standardizing features
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+print("y_train value counts: ", y_train.value_counts())
 scaler = StandardScaler()
 X_train_scaled = scaler.fit_transform(X_train)
 X_test_scaled = scaler.transform(X_test)
 
 # Logistic Regression Model
-logreg = LogisticRegression()
+# logreg = LogisticRegression()
+logreg = LogisticRegression(class_weight='balanced')
 logreg.fit(X_train_scaled, y_train)
+
+# evaluate log reg model
+y_pred = logreg.predict(X_test_scaled)
+print("classification report: ", classification_report(y_test, y_pred))
+print(confusion_matrix(y_test, y_pred))
+
+print(accuracy_score(y_test, y_pred))
+
+
+# # Note: You'll need to adapt this for multi-class or choose a binary subset of your data.
+# fpr, tpr, thresholds = roc_curve(y_test, y_pred_proba[:, 1])
+# roc_auc = auc(fpr, tpr)
+
+
+# scores = cross_val_score(logreg, X_test_scaled, y, cv=5)
+# print(scores)
+
+# print(logreg.coef_)
+
 
 # Predicting labels using the logistic regression model
 final_dataset_with_new_features['PredictedLabel'] = logreg.predict(scaler.transform(X))
@@ -106,7 +130,7 @@ final_dataset_with_new_features['PredictedLabel'] = logreg.predict(scaler.transf
 stop_loss_threshold = 0.05  # 5% drop from buying price
 take_profit_threshold = 0.05  # 5% rise from buying price
 cash = 10000  # Starting cash
-trading_lot = 1000
+trading_lot = 2000
 shares = 0    # Number of shares held
 trade_log = []  # Log of trades
 
@@ -115,7 +139,7 @@ print("***")
 print("\n")
 
 for index, row in final_dataset_with_new_features.iterrows():
-    print("index: ", index, "row: ", row)
+    # print("index: ", index, "row: ", row)
     current_price = row['Open']
     if shares > 0:
         change_percentage = (current_price - buy_price) / buy_price
@@ -126,7 +150,7 @@ for index, row in final_dataset_with_new_features.iterrows():
             continue
 
     # Model-based trading decisions
-    if row['PredictedLabel'] == 'Hold' and cash >= current_price:  # Buy signal
+    if row['PredictedLabel'] == 'Buy' and cash >= trading_lot:  # Buy signal
         # num_shares_to_buy = int(cash / current_price)
         num_shares_to_buy = int(trading_lot / current_price)
         shares += num_shares_to_buy
@@ -136,6 +160,7 @@ for index, row in final_dataset_with_new_features.iterrows():
         print(f"ACTION : Buying {num_shares_to_buy} shares at {current_price} on {row['Date']}")
     elif row['PredictedLabel'] == 'Sell' and shares > 0:  # Sell signal
         cash += shares * current_price
+        print("CHECK : cash amt ", cash)
         # num_shares_to_sell = int(trading_lot / current_price)
         # cash += 
         trade_log.append(f"Sell {shares} shares at {current_price} on {row['Date']} (Model signal)")
@@ -146,5 +171,6 @@ for index, row in final_dataset_with_new_features.iterrows():
 final_portfolio_value = cash + shares * final_dataset_with_new_features.iloc[-1]['Open']
 
 # Output
-print(trade_log[:10])  # Display first 10 trades
+for log in trade_log:
+    print(log)
 print(f"Final Portfolio Value: {final_portfolio_value}")

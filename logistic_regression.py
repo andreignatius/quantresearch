@@ -141,13 +141,13 @@ print("\n")
 for index, row in final_dataset_with_new_features.iterrows():
     # print("index: ", index, "row: ", row)
     current_price = row['Open']
-    if shares > 0:
-        change_percentage = (current_price - buy_price) / buy_price
-        if change_percentage <= -stop_loss_threshold or change_percentage >= take_profit_threshold:
-            cash += shares * current_price
-            trade_log.append(f"Sell {shares} shares at {current_price} on {row['Date']} (Stop-loss/Take-profit triggered)")
-            shares = 0
-            continue
+    # if shares > 0:
+    #     change_percentage = (current_price - buy_price) / buy_price
+    #     if change_percentage <= -stop_loss_threshold or change_percentage >= take_profit_threshold:
+    #         cash += shares * current_price
+    #         trade_log.append(f"Sell {shares} shares at {current_price} on {row['Date']} (Stop-loss/Take-profit triggered)")
+    #         shares = 0
+    #         continue
 
     # Model-based trading decisions
     if row['PredictedLabel'] == 'Buy' and cash >= trading_lot:  # Buy signal

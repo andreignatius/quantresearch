@@ -37,8 +37,16 @@ labels = pd.DataFrame(index=range(len(close_prices)), columns=['Label'])
 labels.loc[peaks, 'Label'] = 'Sell'
 labels.loc[troughs, 'Label'] = 'Buy'
 
+print("fft_features: ", fft_features)
+print("forex_data: ", forex_data)
+print("labels: ", labels)
 # Merging the FFT features and labels with the Forex data
 final_dataset = forex_data.join(fft_features).join(labels)
+
+print("check final_dataset: ", final_dataset)
+
+print("***")
+print("\n")
 
 # Calculating Moving Averages and RSI manually
 def calculate_rsi(data, window=14):
@@ -83,10 +91,16 @@ final_dataset_with_new_features['PredictedLabel'] = logreg.predict(scaler.transf
 stop_loss_threshold = 0.05  # 5% drop from buying price
 take_profit_threshold = 0.05  # 5% rise from buying price
 cash = 10000  # Starting cash
+trading_lot = 2500
 shares = 0    # Number of shares held
 trade_log = []  # Log of trades
 
+print("final_dataset_with_new_features: ", final_dataset_with_new_features)
+print("***")
+print("\n")
+
 for index, row in final_dataset_with_new_features.iterrows():
+    print("index: ", index, "row: ", row)
     current_price = row['Open']
     if shares > 0:
         change_percentage = (current_price - buy_price) / buy_price
@@ -97,15 +111,20 @@ for index, row in final_dataset_with_new_features.iterrows():
             continue
 
     # Model-based trading decisions
-    if row['PredictedLabel'] == 1 and cash >= current_price:  # Buy signal
-        num_shares_to_buy = int(cash / current_price)
+    if row['PredictedLabel'] == 'Buy' and cash >= current_price:  # Buy signal
+        # num_shares_to_buy = int(cash / current_price)
+        num_shares_to_buy = int(trading_lot / current_price)
         shares += num_shares_to_buy
         cash -= num_shares_to_buy * current_price
         buy_price = current_price
         trade_log.append(f"Buy {num_shares_to_buy} shares at {current_price} on {row['Date']}")
-    elif row['PredictedLabel'] == 0 and shares > 0:  # Sell signal
+        print(f"ACTION : Buying {num_shares_to_buy} shares at {current_price} on {row['Date']}")
+    elif row['PredictedLabel'] == 'Sell' and shares > 0:  # Sell signal
         cash += shares * current_price
+        # num_shares_to_sell = int(trading_lot / current_price)
+        # cash += 
         trade_log.append(f"Sell {shares} shares at {current_price} on {row['Date']} (Model signal)")
+        print(f"ACTION : Selling {shares} shares at {current_price} on {row['Date']} (Model signal)")
         shares = 0
 
 # Calculate final portfolio value

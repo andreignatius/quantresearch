@@ -1,3 +1,8 @@
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense
+from tensorflow.keras.utils import to_categorical
+from sklearn.preprocessing import LabelEncoder
+
 from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.metrics import classification_report, confusion_matrix
 
@@ -10,8 +15,11 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import classification_report, confusion_matrix
 
-from imblearn.over_sampling import SMOTE
+# from imblearn.over_sampling import SMOTE
 from sklearn.ensemble import GradientBoostingClassifier
+from sklearn.utils.class_weight import compute_class_weight
+
+import random
 
 # Load the Forex data
 file_path = 'USD_JPY.csv'
@@ -94,7 +102,7 @@ checkpoint_date_bottom = None  # Initialize to a sensible default or first date
 checkpoint_date_top = None  # Initialize to a sensible default or first date
 
 for index, row in final_dataset_with_new_features.iterrows():
-    print("index: ", index, "row: ", row)
+    # print("index: ", index, "row: ", row)
     current_price = row['Open']
 
     today_date = pd.to_datetime(row['Date'])
@@ -129,32 +137,41 @@ print("y_train value counts: ", y_train.value_counts())
 scaler = StandardScaler()
 X_train_scaled = scaler.fit_transform(X_train)
 X_test_scaled = scaler.transform(X_test)
+# Assuming X_train_scaled, y_train, X_test_scaled, y_test are already defined
 
+# Convert labels to tensors and apply one-hot encoding
+label_encoder = LabelEncoder()
+y_train_encoded = label_encoder.fit_transform(y_train)
+y_test_encoded = label_encoder.transform(y_test)
 
+# Convert labels to categorical (one-hot encoding)
+y_train_categorical = to_categorical(y_train_encoded)
+y_test_categorical = to_categorical(y_test_encoded)
 
+# Neural Network architecture
+model = Sequential()
+model.add(Dense(64, input_dim=X_train_scaled.shape[1], activation='relu'))
+model.add(Dense(32, activation='relu'))
+model.add(Dense(y_train_categorical.shape[1], activation='softmax'))  # Output layer
 
-# Apply SMOTE
-smote = SMOTE()
-X_train_smote, y_train_smote = smote.fit_resample(X_train_scaled, y_train)
+# Compile the model
+model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
 
-# Train the GBT model on the balanced dataset
-gbt_model = GradientBoostingClassifier()
-gbt_model.fit(X_train_smote, y_train_smote)
+# Train the model
+model.fit(X_train_scaled, y_train_categorical, epochs=50, batch_size=10)
 
+# Evaluate the model
+loss, accuracy = model.evaluate(X_test_scaled, y_test_categorical)
+print(f"Loss: {loss}, Accuracy: {accuracy}")
 
+# Generate predictions
+predicted_probs = model.predict(X_test_scaled)
 
-# # Initialize and train the model
-# gbt_model = GradientBoostingClassifier()
-# gbt_model.fit(X_train_scaled, y_train)
+# Convert probabilities to class labels
+predicted_labels = np.argmax(predicted_probs, axis=1)
 
-# # Predict and evaluate
-# y_pred_gbt = gbt_model.predict(X_test_scaled)
-# print(classification_report(y_test, y_pred_gbt))
-# print(confusion_matrix(y_test, y_pred_gbt))
-# print("Feature Importances:", gbt_model.feature_importances_)
-
-# Predicting labels using the logistic regression model
-final_dataset_with_new_features['PredictedLabel'] = gbt_model.predict(scaler.transform(X))
+# Assuming label_encoder was used to encode y_train
+predicted_categories = label_encoder.inverse_transform(predicted_labels)
 
 # Backtesting with stop-loss and take-profit
 stop_loss_threshold = 0.05  # 5% drop from buying price
@@ -164,43 +181,26 @@ trading_lot = 2000
 shares = 0    # Number of shares held
 trade_log = []  # Log of trades
 
-print("final_dataset_with_new_features: ", final_dataset_with_new_features)
-print("***")
-print("\n")
-
-for index, row in final_dataset_with_new_features.iterrows():
-    # print("index: ", index, "row: ", row)
-    current_price = row['Open']
-    # if shares > 0:
-    #     change_percentage = (current_price - buy_price) / buy_price
-    #     if change_percentage <= -stop_loss_threshold or change_percentage >= take_profit_threshold:
-    #         cash += shares * current_price
-    #         trade_log.append(f"Sell {shares} shares at {current_price} on {row['Date']} (Stop-loss/Take-profit triggered)")
-    #         shares = 0
-    #         continue
-
-    # Model-based trading decisions
-    if row['PredictedLabel'] == 'Buy' and cash >= trading_lot:  # Buy signal
-        # num_shares_to_buy = int(cash / current_price)
+for index, (row, prediction) in enumerate(zip(final_dataset_with_new_features.iterrows(), predicted_categories)):
+    # print("row: ", row)
+    # print("row[0]: ", row[0])
+    # print("row[1]: ", row[1])
+    current_price = row[1]['Open']
+    
+    if prediction == 'Buy' and cash >= trading_lot:
         num_shares_to_buy = int(trading_lot / current_price)
         shares += num_shares_to_buy
         cash -= num_shares_to_buy * current_price
         buy_price = current_price
-        trade_log.append(f"Buy {num_shares_to_buy} shares at {current_price} on {row['Date']}")
-        print(f"ACTION : Buying {num_shares_to_buy} shares at {current_price} on {row['Date']}")
-    elif row['PredictedLabel'] == 'Sell' and shares > 0:  # Sell signal
+        trade_log.append(f"Buy {num_shares_to_buy} shares at {current_price} on {row[1]['Date']}")
+    elif prediction == 'Sell' and shares > 0:
         cash += shares * current_price
-        print("CHECK : cash amt ", cash)
-        # num_shares_to_sell = int(trading_lot / current_price)
-        # cash += 
-        trade_log.append(f"Sell {shares} shares at {current_price} on {row['Date']} (Model signal)")
-        print(f"ACTION : Selling {shares} shares at {current_price} on {row['Date']} (Model signal)")
+        trade_log.append(f"Sell {shares} shares at {current_price} on {row[1]['Date']}")
         shares = 0
 
 # Calculate final portfolio value
-final_portfolio_value = cash + shares * final_dataset_with_new_features.iloc[-1]['Open']
+final_portfolio_value = cash + (shares * final_dataset_with_new_features.iloc[-1]['Open'])
 
 # Output
-for log in trade_log:
-    print(log)
+print(trade_log)
 print(f"Final Portfolio Value: {final_portfolio_value}")

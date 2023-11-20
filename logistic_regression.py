@@ -86,10 +86,40 @@ print("check final_dataset_with_new_features: ", final_dataset_with_new_features
 
 # Data Preprocessing
 final_dataset_with_new_features.dropna(inplace=True)
+
+# local_trough = float('inf')
+# local_peak = -float('inf')
+checkpoint_date_bottom = None  # Initialize to a sensible default or first date
+checkpoint_date_top = None  # Initialize to a sensible default or first date
+
+for index, row in final_dataset_with_new_features.iterrows():
+    print("index: ", index, "row: ", row)
+    current_price = row['Open']
+
+    today_date = pd.to_datetime(row['Date'])
+
+    if row['Label'] == 'Buy':
+        checkpoint_date_bottom = today_date
+        print("CHECK UPDATE local_trough checkpoint_date_bottom: ", today_date)
+    if row['Label'] == 'Sell':
+        checkpoint_date_top = today_date
+        print("CHECK UPDATE local_peak checkpoint_date_top: ", today_date)
+
+    days_since_bottom = (today_date - checkpoint_date_bottom).days if checkpoint_date_bottom else 0
+    print("days_since_bottom: ", days_since_bottom)
+    days_since_peak = (today_date - checkpoint_date_top).days if checkpoint_date_top else 0
+    print("days_since_peak: ", days_since_peak)
+
+    # final_dataset_with_new_features.at[index, 'DaysSincePeakTrough'] = max(days_since_bottom, days_since_peak)
+    final_dataset_with_new_features.at[index, 'DaysSincePeak'] = days_since_peak
+    final_dataset_with_new_features.at[index, 'DaysSincePeakTrough'] = days_since_bottom
+
+
 final_dataset_with_new_features.to_csv('final_dataset_with_new_features.csv')
 # print("check final_dataset_with_new_features: ", final_dataset_with_new_features)
 # X = final_dataset_with_new_features[['Frequency', 'Amplitude', 'DaysPerCycle', 'Short_Moving_Avg', 'Long_Moving_Avg', 'RSI']]
-X = final_dataset_with_new_features[['Short_Moving_Avg', 'Long_Moving_Avg', 'RSI']]
+
+X = final_dataset_with_new_features[['Short_Moving_Avg', 'Long_Moving_Avg', 'RSI', 'DaysSincePeak', 'DaysSincePeakTrough']]
 y = final_dataset_with_new_features['Label']
 
 # Splitting the dataset and standardizing features
@@ -141,6 +171,7 @@ print("\n")
 for index, row in final_dataset_with_new_features.iterrows():
     # print("index: ", index, "row: ", row)
     current_price = row['Open']
+
     # if shares > 0:
     #     change_percentage = (current_price - buy_price) / buy_price
     #     if change_percentage <= -stop_loss_threshold or change_percentage >= take_profit_threshold:

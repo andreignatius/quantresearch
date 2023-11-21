@@ -21,11 +21,21 @@ from sklearn.utils.class_weight import compute_class_weight
 
 import random
 
-from base_model import BaseModel
+# from base_model import BaseModel
 
+# # Load the Forex data
+# file_path = 'USD_JPY.csv'
+# model = BaseModel(file_path, 'tf_nn')
+
+# data = model.load_preprocess_data()
+# model.train()
+# print("GOING TO PREDICT")
+# predicted_categories = model.predict()
+
+from tf_nn_model import TF_NN_Model
 # Load the Forex data
 file_path = 'USD_JPY.csv'
-model = BaseModel(file_path, 'tf_nn')
+model = TF_NN_Model(file_path)
 
 data = model.load_preprocess_data()
 model.train()

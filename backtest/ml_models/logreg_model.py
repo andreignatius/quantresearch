@@ -63,6 +63,7 @@ class LogRegModel(BaseModel):
         # self.data['PredictedLabel'] = self.model.predict(self.scaler.transform(self.X))
         # return self.data
         predicted_categories = self.model.predict(self.scaler.transform(self.X_test_scaled))
+        print("CHECK predicted_labels: ", predicted_categories)
         return predicted_categories
 
     def evaluate(self, X, y):

@@ -104,9 +104,15 @@ class BaseModel:
     def calculate_days_since_peaks_and_troughs(self):
         self.data['DaysSincePeak'] = 0
         self.data['DaysSinceTrough'] = 0
+        self.data['PriceChangeSincePeak'] = 0
+        self.data['PriceChangeSinceTrough'] = 0
 
         checkpoint_date_bottom = None  # Initialize to a sensible default or first date
         checkpoint_date_top = None  # Initialize to a sensible default or first date
+        checkpoint_price_bottom = None
+        checkpoint_price_top = None
+        price_change_since_bottom = 0
+        price_change_since_peak = 0
 
         for index, row in self.data.iterrows():
             current_price = row['Open']
@@ -114,15 +120,24 @@ class BaseModel:
 
             if row['Label'] == 'Buy':
                 checkpoint_date_bottom = today_date
+                checkpoint_price_bottom = current_price
             if row['Label'] == 'Sell':
                 checkpoint_date_top = today_date
+                checkpoint_price_top = current_price
 
             days_since_bottom = (today_date - checkpoint_date_bottom).days if checkpoint_date_bottom else 0
             days_since_peak = (today_date - checkpoint_date_top).days if checkpoint_date_top else 0
 
+            if checkpoint_price_bottom is not None:
+                price_change_since_bottom = current_price - checkpoint_price_bottom
+            if checkpoint_price_top is not None:
+                price_change_since_peak = current_price - checkpoint_price_top
+
             # final_dataset_with_new_features.at[index, 'DaysSincePeakTrough'] = max(days_since_bottom, days_since_peak)
             self.data.at[index, 'DaysSincePeak'] = days_since_peak
             self.data.at[index, 'DaysSinceTrough'] = days_since_bottom
+            self.data.at[index, 'PriceChangeSincePeak'] = price_change_since_peak
+            self.data.at[index, 'PriceChangeSinceTrough'] = price_change_since_bottom
 
     def preprocess_data(self):
         self.data.dropna(inplace=True)
@@ -138,6 +153,8 @@ class BaseModel:
         self.split_idx = int(len(self.data) * (1 - test_size))
         
         # Split the data without shuffling
+        # self.X_train = self.data[['Short_Moving_Avg', 'Long_Moving_Avg', 'RSI', 'DaysSincePeak', 'DaysSinceTrough', 'PriceChangeSincePeak', 'PriceChangeSinceTrough']].iloc[:self.split_idx]
+        # self.X_test = self.data[['Short_Moving_Avg', 'Long_Moving_Avg', 'RSI', 'DaysSincePeak', 'DaysSinceTrough', 'PriceChangeSincePeak', 'PriceChangeSinceTrough']].iloc[self.split_idx:]
         self.X_train = self.data[['Short_Moving_Avg', 'Long_Moving_Avg', 'RSI', 'DaysSincePeak', 'DaysSinceTrough']].iloc[:self.split_idx]
         self.X_test = self.data[['Short_Moving_Avg', 'Long_Moving_Avg', 'RSI', 'DaysSincePeak', 'DaysSinceTrough']].iloc[self.split_idx:]
         self.y_train = self.data['Label'].iloc[:self.split_idx]

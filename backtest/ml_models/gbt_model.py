@@ -55,8 +55,8 @@ class GBTModel(BaseModel):
         self.X_train_scaled = self.scaler.fit_transform(self.X_train)
         self.X_test_scaled = self.scaler.transform(self.X_test)
 
-        smote = SMOTE()
-        self.X_train_scaled, self.y_train = smote.fit_resample(self.X_train_scaled, self.y_train)
+        # smote = SMOTE()
+        # self.X_train_scaled, self.y_train = smote.fit_resample(self.X_train_scaled, self.y_train)
 
         self.model.fit(self.X_train_scaled, self.y_train)
 
@@ -65,6 +65,7 @@ class GBTModel(BaseModel):
         # self.data['PredictedLabel'] = self.model.predict(self.scaler.transform(self.X))
         # return self.data
         predicted_categories = self.model.predict(self.scaler.transform(self.X_test_scaled))
+        print("CHECK predicted_labels: ", predicted_categories)
         return predicted_categories
 
     def evaluate(self, X, y):

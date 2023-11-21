@@ -73,8 +73,24 @@ class TF_NN_Model(BaseModel):
         # Compile the model
         self.model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
 
-        # Train the model
-        self.model.fit(self.X_train_scaled, y_train_categorical, epochs=50, batch_size=10)
+        # Calculate class weights
+        class_weights = compute_class_weight(
+            class_weight='balanced',
+            classes=np.unique(y_train_encoded),
+            y=y_train_encoded
+        )
+        class_weights_dict = dict(enumerate(class_weights))
+
+        # Then pass these weights to the 'fit' method
+        self.model.fit(
+            self.X_train_scaled,
+            y_train_categorical,
+            epochs=50,
+            batch_size=10,
+            class_weight=class_weights_dict
+        )
+        # # Train the model
+        # self.model.fit(self.X_train_scaled, y_train_categorical, epochs=50, batch_size=10)
 
 
 

@@ -102,7 +102,8 @@ predicted_categories = model.predict()
 stop_loss_threshold = 0.05  # 5% drop from buying price
 take_profit_threshold = 0.05  # 5% rise from buying price
 cash = 10000  # Starting cash
-trading_lot = 2000
+starting_cash = cash
+trading_lot = 2500
 shares = 0    # Number of shares held
 trade_log = []  # Log of trades
 
@@ -136,4 +137,5 @@ final_portfolio_value = cash + (shares * data.iloc[-1]['Open'])
 
 # Output
 print(trade_log)
+print("num trades: ", len(trade_log))
 print(f"Final Portfolio Value: {final_portfolio_value}")

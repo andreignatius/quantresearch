@@ -34,9 +34,9 @@ import random
 
 # data = model.predict()
 
-from pt_nn_model import PT_NN_Model
+from ml_models.pt_nn_model import PT_NN_Model
 # Load the Forex data
-file_path = 'USD_JPY.csv'
+file_path = 'data/USD_JPY.csv'
 model = PT_NN_Model(file_path)
 
 model.load_preprocess_data()

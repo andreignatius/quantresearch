@@ -33,7 +33,7 @@ from sklearn.metrics import classification_report, confusion_matrix
 
 import random
 
-from base_model import BaseModel
+from .base_model import BaseModel
 
 # Neural Network architecture
 class NeuralNetwork(nn.Module):

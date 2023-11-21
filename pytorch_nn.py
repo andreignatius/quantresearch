@@ -24,7 +24,7 @@ from sklearn.utils.class_weight import compute_class_weight
 import random
 
 # Load the Forex data
-file_path = 'USD_JPY.csv'
+file_path = 'backtest/data/USD_JPY.csv'
 forex_data = pd.read_csv(file_path)
 
 # Fourier Transform Analysis
@@ -180,18 +180,6 @@ train_dataset = TensorDataset(X_train_tensor, y_train_categorical)
 test_dataset = TensorDataset(X_test_tensor, y_test_categorical)
 
 # Neural Network architecture
-# class NeuralNetwork(nn.Module):
-#     def __init__(self, num_features, num_classes):
-#         super(NeuralNetwork, self).__init__()
-#         self.fc1 = nn.Linear(num_features, 64)
-#         self.fc2 = nn.Linear(64, 32)
-#         self.fc3 = nn.Linear(32, num_classes)
-
-#     def forward(self, x):
-#         x = F.relu(self.fc1(x))
-#         x = F.relu(self.fc2(x))
-#         x = self.fc3(x)
-#         return x
 class NeuralNetwork(nn.Module):
     def __init__(self, num_features, num_classes):
         super(NeuralNetwork, self).__init__()

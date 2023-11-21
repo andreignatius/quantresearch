@@ -33,12 +33,12 @@ from sklearn.metrics import classification_report, confusion_matrix
 
 import random
 
-from base_model import BaseModel
+from .base_model import BaseModel
 
-class GBTModel(BaseModel):
+class LogRegModel(BaseModel):
     def __init__(self, file_path):
         super().__init__(file_path)
-        self.model = GradientBoostingClassifier()
+        self.model = LogisticRegression(class_weight='balanced')
 
     def train(self):
         # Implement or leave empty to override in derived classes
@@ -53,9 +53,6 @@ class GBTModel(BaseModel):
         print("y_train value counts: ", self.y_train.value_counts())
         self.X_train_scaled = self.scaler.fit_transform(self.X_train)
         self.X_test_scaled = self.scaler.transform(self.X_test)
-
-        smote = SMOTE()
-        self.X_train_scaled, self.y_train = smote.fit_resample(self.X_train_scaled, self.y_train)
 
         self.model.fit(self.X_train_scaled, self.y_train)
 

@@ -33,13 +33,12 @@ from sklearn.metrics import classification_report, confusion_matrix
 
 import random
 
-from base_model import BaseModel
+from .base_model import BaseModel
 
-class TF_NN_Model(BaseModel):
+class GBTModel(BaseModel):
     def __init__(self, file_path):
         super().__init__(file_path)
-        self.model = Sequential()
-        self.label_encoder = LabelEncoder()
+        self.model = GradientBoostingClassifier()
 
     def train(self):
         # Implement or leave empty to override in derived classes
@@ -55,38 +54,15 @@ class TF_NN_Model(BaseModel):
         self.X_train_scaled = self.scaler.fit_transform(self.X_train)
         self.X_test_scaled = self.scaler.transform(self.X_test)
 
-        # Convert labels to tensors and apply one-hot encoding
-        y_train_encoded = self.label_encoder.fit_transform(self.y_train)
-        y_test_encoded = self.label_encoder.transform(self.y_test)
+        smote = SMOTE()
+        self.X_train_scaled, self.y_train = smote.fit_resample(self.X_train_scaled, self.y_train)
 
-        # Convert labels to categorical (one-hot encoding)
-        y_train_categorical = to_categorical(y_train_encoded)
-        y_test_categorical = to_categorical(y_test_encoded)
-
-        # Neural Network architecture
-        self.model.add(Dense(64, input_dim=self.X_train_scaled.shape[1], activation='relu'))
-        self.model.add(Dense(32, activation='relu'))
-        self.model.add(Dense(y_train_categorical.shape[1], activation='softmax'))  # Output layer
-
-        # Compile the model
-        self.model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
-
-        # Train the model
-        self.model.fit(self.X_train_scaled, y_train_categorical, epochs=50, batch_size=10)
-
+        self.model.fit(self.X_train_scaled, self.y_train)
 
 
     def predict(self):
-        print("CHECK TF_NN")
-        predicted_probs = self.model.predict(self.X_test_scaled)
-        # predicted_probs = self.model.predict(self.X)
-        # Convert probabilities to class labels
-        predicted_labels = np.argmax(predicted_probs, axis=1)
-
-        # Assuming label_encoder was used to encode y_train
-        predicted_categories = self.label_encoder.inverse_transform(predicted_labels)
-        print("CHECK predicted_labels: ", predicted_categories)
-        return predicted_categories
+        self.data['PredictedLabel'] = self.model.predict(self.scaler.transform(self.X))
+        return self.data
 
     def evaluate(self, X, y):
         # Implement evaluation logic

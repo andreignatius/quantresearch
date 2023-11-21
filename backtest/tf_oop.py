@@ -32,9 +32,9 @@ import random
 # print("GOING TO PREDICT")
 # predicted_categories = model.predict()
 
-from tf_nn_model import TF_NN_Model
+from ml_models.tf_nn_model import TF_NN_Model
 # Load the Forex data
-file_path = 'USD_JPY.csv'
+file_path = 'data/USD_JPY.csv'
 model = TF_NN_Model(file_path)
 
 data = model.load_preprocess_data()

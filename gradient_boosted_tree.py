@@ -14,7 +14,7 @@ from imblearn.over_sampling import SMOTE
 from sklearn.ensemble import GradientBoostingClassifier
 
 # Load the Forex data
-file_path = 'USD_JPY.csv'
+file_path = 'backtest/data/USD_JPY.csv'
 forex_data = pd.read_csv(file_path)
 
 # Fourier Transform Analysis

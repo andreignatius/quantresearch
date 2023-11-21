@@ -11,7 +11,7 @@ from sklearn.metrics import roc_curve, auc
 from sklearn.model_selection import cross_val_score
 
 # Load the Forex data
-file_path = 'USD_JPY.csv'
+file_path = 'backtest/data/USD_JPY.csv'
 forex_data = pd.read_csv(file_path)
 
 # Fourier Transform Analysis

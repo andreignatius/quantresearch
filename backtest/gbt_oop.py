@@ -11,11 +11,11 @@ from sklearn.metrics import roc_curve, auc
 from sklearn.model_selection import cross_val_score
 
 # from base_model import BaseModel
-from logreg_model import LogRegModel
+from ml_models.gbt_model import GBTModel
 
 # Load the Forex data
-file_path = 'USD_JPY.csv'
-model = LogRegModel(file_path)
+file_path = 'data/USD_JPY.csv'
+model = GBTModel(file_path)
 
 model.load_preprocess_data()
 model.train()

@@ -1,6 +1,3 @@
-from sklearn.ensemble import GradientBoostingClassifier
-from sklearn.metrics import classification_report, confusion_matrix
-
 import pandas as pd
 import numpy as np
 from scipy.fft import fft
@@ -9,9 +6,9 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import classification_report, confusion_matrix
-
-from imblearn.over_sampling import SMOTE
-from sklearn.ensemble import GradientBoostingClassifier
+from sklearn.metrics import accuracy_score
+from sklearn.metrics import roc_curve, auc
+from sklearn.model_selection import cross_val_score
 
 # Load the Forex data
 file_path = 'USD_JPY.csv'
@@ -90,6 +87,8 @@ print("check final_dataset_with_new_features: ", final_dataset_with_new_features
 # Data Preprocessing
 final_dataset_with_new_features.dropna(inplace=True)
 
+# local_trough = float('inf')
+# local_peak = -float('inf')
 checkpoint_date_bottom = None  # Initialize to a sensible default or first date
 checkpoint_date_top = None  # Initialize to a sensible default or first date
 
@@ -114,47 +113,48 @@ for index, row in final_dataset_with_new_features.iterrows():
     # final_dataset_with_new_features.at[index, 'DaysSincePeakTrough'] = max(days_since_bottom, days_since_peak)
     final_dataset_with_new_features.at[index, 'DaysSincePeak'] = days_since_peak
     final_dataset_with_new_features.at[index, 'DaysSincePeakTrough'] = days_since_bottom
-    
+
 
 final_dataset_with_new_features.to_csv('final_dataset_with_new_features.csv')
 # print("check final_dataset_with_new_features: ", final_dataset_with_new_features)
 # X = final_dataset_with_new_features[['Frequency', 'Amplitude', 'DaysPerCycle', 'Short_Moving_Avg', 'Long_Moving_Avg', 'RSI']]
+
 X = final_dataset_with_new_features[['Short_Moving_Avg', 'Long_Moving_Avg', 'RSI', 'DaysSincePeak', 'DaysSincePeakTrough']]
-# X = final_dataset_with_new_features[['Short_Moving_Avg', 'Long_Moving_Avg', 'RSI']]
 y = final_dataset_with_new_features['Label']
 
-# Assuming X and y are your features and labels
+# Splitting the dataset and standardizing features
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
 print("y_train value counts: ", y_train.value_counts())
 scaler = StandardScaler()
 X_train_scaled = scaler.fit_transform(X_train)
 X_test_scaled = scaler.transform(X_test)
 
+# Logistic Regression Model
+# logreg = LogisticRegression()
+logreg = LogisticRegression(class_weight='balanced')
+logreg.fit(X_train_scaled, y_train)
+
+# evaluate log reg model
+y_pred = logreg.predict(X_test_scaled)
+print("classification report: ", classification_report(y_test, y_pred))
+print(confusion_matrix(y_test, y_pred))
+
+print(accuracy_score(y_test, y_pred))
 
 
-
-# Apply SMOTE
-smote = SMOTE()
-X_train_smote, y_train_smote = smote.fit_resample(X_train_scaled, y_train)
-
-# Train the GBT model on the balanced dataset
-gbt_model = GradientBoostingClassifier()
-gbt_model.fit(X_train_smote, y_train_smote)
+# # Note: You'll need to adapt this for multi-class or choose a binary subset of your data.
+# fpr, tpr, thresholds = roc_curve(y_test, y_pred_proba[:, 1])
+# roc_auc = auc(fpr, tpr)
 
 
+# scores = cross_val_score(logreg, X_test_scaled, y, cv=5)
+# print(scores)
 
-# # Initialize and train the model
-# gbt_model = GradientBoostingClassifier()
-# gbt_model.fit(X_train_scaled, y_train)
+# print(logreg.coef_)
 
-# # Predict and evaluate
-# y_pred_gbt = gbt_model.predict(X_test_scaled)
-# print(classification_report(y_test, y_pred_gbt))
-# print(confusion_matrix(y_test, y_pred_gbt))
-# print("Feature Importances:", gbt_model.feature_importances_)
 
 # Predicting labels using the logistic regression model
-final_dataset_with_new_features['PredictedLabel'] = gbt_model.predict(scaler.transform(X))
+final_dataset_with_new_features['PredictedLabel'] = logreg.predict(scaler.transform(X))
 
 # Backtesting with stop-loss and take-profit
 stop_loss_threshold = 0.05  # 5% drop from buying price
@@ -171,6 +171,7 @@ print("\n")
 for index, row in final_dataset_with_new_features.iterrows():
     # print("index: ", index, "row: ", row)
     current_price = row['Open']
+
     # if shares > 0:
     #     change_percentage = (current_price - buy_price) / buy_price
     #     if change_percentage <= -stop_loss_threshold or change_percentage >= take_profit_threshold:
@@ -180,7 +181,7 @@ for index, row in final_dataset_with_new_features.iterrows():
     #         continue
 
     # Model-based trading decisions
-    if row['PredictedLabel'] == 'Buy' and cash >= trading_lot:  # Buy signal
+    if row['Label'] == 'Buy' and cash >= trading_lot:  # Buy signal
         # num_shares_to_buy = int(cash / current_price)
         num_shares_to_buy = int(trading_lot / current_price)
         shares += num_shares_to_buy
@@ -188,7 +189,7 @@ for index, row in final_dataset_with_new_features.iterrows():
         buy_price = current_price
         trade_log.append(f"Buy {num_shares_to_buy} shares at {current_price} on {row['Date']}")
         print(f"ACTION : Buying {num_shares_to_buy} shares at {current_price} on {row['Date']}")
-    elif row['PredictedLabel'] == 'Sell' and shares > 0:  # Sell signal
+    elif row['Label'] == 'Sell' and shares > 0:  # Sell signal
         cash += shares * current_price
         print("CHECK : cash amt ", cash)
         # num_shares_to_sell = int(trading_lot / current_price)

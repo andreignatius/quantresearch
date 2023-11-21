@@ -37,8 +37,9 @@ from ml_models.tf_nn_model import TF_NN_Model
 file_path = 'data/USD_JPY.csv'
 model = TF_NN_Model(file_path)
 
-data = model.load_preprocess_data()
+model.load_preprocess_data()
 model.train()
+data = model.retrieve_test_set()
 print("GOING TO PREDICT")
 predicted_categories = model.predict()
 
@@ -55,6 +56,14 @@ for index, (row, prediction) in enumerate(zip(data.iterrows(), predicted_categor
     # print("row[0]: ", row[0])
     # print("row[1]: ", row[1])
     current_price = row[1]['Open']
+
+    if shares > 0:
+        change_percentage = (current_price - buy_price) / buy_price
+        if change_percentage <= -stop_loss_threshold:
+            cash += shares * current_price
+            trade_log.append(f"Sell {shares} shares at {current_price} on {row['Date']} (Stop-loss triggered)")
+            shares = 0
+            continue
     
     if prediction == 'Buy' and cash >= trading_lot:
         num_shares_to_buy = int(trading_lot / current_price)

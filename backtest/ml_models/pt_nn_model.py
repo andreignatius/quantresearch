@@ -59,13 +59,14 @@ class PT_NN_Model(BaseModel):
     def train(self):
         # Implement or leave empty to override in derived classes
         # self.X = self.data[['Short_Moving_Avg', 'Long_Moving_Avg', 'RSI']]
-        self.X = self.data[['Short_Moving_Avg', 'Long_Moving_Avg', 'RSI', 'DaysSincePeak', 'DaysSincePeakTrough']]
+        # self.X = self.data[['Short_Moving_Avg', 'Long_Moving_Avg', 'RSI', 'DaysSincePeak', 'DaysSinceTrough']]
 
-        self.y = self.data['Label']
+        # self.y = self.data['Label']
 
-        # Splitting the dataset and standardizing features
-        self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(self.X, self.y, test_size=0.3, random_state=42)
-        
+        # # Splitting the dataset and standardizing features
+        # self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(self.X, self.y, test_size=0.3, random_state=42)
+        self.train_test_split_time_series()
+
         print("y_train value counts: ", self.y_train.value_counts())
         self.X_train_scaled = self.scaler.fit_transform(self.X_train)
         self.X_test_scaled = self.scaler.transform(self.X_test)
@@ -165,7 +166,8 @@ class PT_NN_Model(BaseModel):
 
     def predict(self):
         # Convert entire dataset to PyTorch tensor
-        X_tensor = torch.tensor(self.scaler.transform(self.X)).float()
+        # X_tensor = torch.tensor(self.scaler.transform(self.X)).float()
+        X_tensor = torch.tensor(self.scaler.transform(self.X_test_scaled)).float()
 
         # Predict with the PyTorch model
         self.model.eval()  # Set the model to evaluation mode
@@ -179,10 +181,11 @@ class PT_NN_Model(BaseModel):
         # Convert predicted labels to DataFrame for easy integration
         predicted_labels_df = pd.DataFrame(predicted_categories, columns=['PredictedLabel'])
 
-        # Merge predicted labels with your existing dataset
-        self.data['PredictedLabel'] = predicted_labels_df
+        # # Merge predicted labels with your existing dataset
+        # self.data['PredictedLabel'] = predicted_labels_df
 
-        return self.data
+        # return self.data
+        return predicted_labels_df
 
     def evaluate(self, X, y):
         # Implement evaluation logic

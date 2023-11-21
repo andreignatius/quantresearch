@@ -36,9 +36,7 @@ class BaseModel:
         self.calculate_moving_averages_and_rsi()
         self.calculate_days_since_peaks_and_troughs()
         self.preprocess_data()
-
-        # return self.data
-
+        
     def perform_fourier_transform_analysis(self):
         # Fourier Transform Analysis
         close_prices = self.data['Close'].to_numpy()
@@ -73,14 +71,7 @@ class BaseModel:
         labels.loc[peaks, 'Label'] = 'Sell'
         labels.loc[troughs, 'Label'] = 'Buy'
         labels.loc[mid_trend, 'Label'] = 'Hold'
-
-        # print("fft_features: ", self.fft_features)
-        # print("forex_data: ", self.data)
-        # print("labels: ", labels)
-        # Merging the FFT features and labels with the Forex data
-        # final_dataset = forex_data.join(fft_features).join(labels)
         self.data = self.data.join(labels)
-        # print("check final_dataset: ", self.data)
 
     # Calculating Moving Averages and RSI manually
     def calculate_rsi(self, window=14):

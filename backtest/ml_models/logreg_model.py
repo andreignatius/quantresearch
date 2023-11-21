@@ -41,15 +41,6 @@ class LogRegModel(BaseModel):
         self.model = LogisticRegression(class_weight='balanced')
 
     def train(self):
-        # Implement or leave empty to override in derived classes
-        # self.X = self.data[['Short_Moving_Avg', 'Long_Moving_Avg', 'RSI']]
-        # self.X = self.data[['Short_Moving_Avg', 'Long_Moving_Avg', 'RSI', 'DaysSincePeak', 'DaysSinceTrough']]
-
-        # self.y = self.data['Label']
-
-        # # Splitting the dataset and standardizing features
-        # self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(self.X, self.y, test_size=0.3, random_state=42)
-        
         self.train_test_split_time_series()
 
         print("y_train value counts: ", self.y_train.value_counts())

@@ -12,9 +12,11 @@ from sklearn.metrics import roc_curve, auc
 from sklearn.model_selection import cross_val_score
 from imblearn.over_sampling import SMOTE
 
+
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense
+from tensorflow.keras.layers import LSTM, Dense, Dropout, Conv1D, MaxPooling1D, Flatten
 from tensorflow.keras.utils import to_categorical
+from keras import backend as K
 
 import torch
 import torch.nn as nn
@@ -35,34 +37,88 @@ import random
 
 from .base_model import BaseModel
 
+# Define a custom F1 score metric
+def f1_score(y_true, y_pred):
+    # Calculate precision and recall
+    precision = K.sum(K.round(K.clip(y_true * y_pred, 0, 1))) / K.sum(K.round(K.clip(y_pred, 0, 1)))
+    recall = K.sum(K.round(K.clip(y_true * y_pred, 0, 1))) / K.sum(K.round(K.clip(y_true, 0, 1)))
+    # Calculate F1 score
+    f1_val = 2 * (precision * recall) / (precision + recall + K.epsilon())
+    return f1_val
+
 class TF_NN_Model(BaseModel):
     def __init__(self, file_path):
         super().__init__(file_path)
         self.model = Sequential()
         self.label_encoder = LabelEncoder()
 
+    def reshape_for_lstm(self, X, y, n_timesteps):
+        # Reshape data to [samples, timesteps, features]
+        samples, features = X.shape
+        reshaped_X = np.zeros((samples - n_timesteps, n_timesteps, features))
+
+        for i in range(n_timesteps, samples):
+            reshaped_X[i - n_timesteps] = X[i - n_timesteps:i, :]
+
+        # Adjust y to match the reshaped X
+        reshaped_y = y[n_timesteps:]
+
+        return reshaped_X, reshaped_y
+
     def train(self):
         self.train_test_split_time_series()
 
         print("y_train value counts: ", self.y_train.value_counts())
+        n_timesteps = 10
         self.X_train_scaled = self.scaler.fit_transform(self.X_train)
         self.X_test_scaled = self.scaler.transform(self.X_test)
+
+        
+
+        # self.X_train_scaled = self.reshape_for_lstm(self.X_train_scaled, n_timesteps)
+        # self.X_test_scaled = self.reshape_for_lstm(self.X_test_scaled, n_timesteps)
+        
+        # self.X_train_scaled = self.scaler.fit_transform(self.X_train)
+        # self.X_test_scaled = self.scaler.transform(self.X_test)
+
+        self.X_train_scaled, self.y_train = self.reshape_for_lstm(self.X_train_scaled, self.y_train, n_timesteps)
+        self.X_test_scaled, self.y_test = self.reshape_for_lstm(self.X_test_scaled, self.y_test, n_timesteps)
+
 
         # Convert labels to tensors and apply one-hot encoding
         y_train_encoded = self.label_encoder.fit_transform(self.y_train)
         y_test_encoded = self.label_encoder.transform(self.y_test)
 
+        
+
         # Convert labels to categorical (one-hot encoding)
         y_train_categorical = to_categorical(y_train_encoded)
         y_test_categorical = to_categorical(y_test_encoded)
 
-        # Neural Network architecture
-        self.model.add(Dense(64, input_dim=self.X_train_scaled.shape[1], activation='relu'))
+        # # Neural Network architecture
+        # self.model.add(Dense(64, input_dim=self.X_train_scaled.shape[1], activation='relu'))
+        # self.model.add(Dense(32, activation='relu'))
+        # self.model.add(Dense(y_train_categorical.shape[1], activation='softmax'))  # Output layer
+
+        # self.model.add(Conv1D(filters=64, kernel_size=3, activation='relu', input_shape=(n_timesteps, n_features)))
+        # self.model.add(MaxPooling1D(pool_size=2))
+        # self.model.add(Flatten())
+        # self.model.add(LSTM(50, activation='relu'))
+        # self.model.add(Dropout(0.5))
+        # self.model.add(Dense(100, activation='relu'))
+        # self.model.add(Dense(n_outputs, activation='softmax'))
+
+        self.model.add(Conv1D(filters=32, kernel_size=3, activation='relu', input_shape=(self.X_train_scaled.shape[1], self.X_train_scaled.shape[2])))
+        self.model.add(MaxPooling1D(pool_size=2))
+        self.model.add(LSTM(50, return_sequences=True))
+        self.model.add(LSTM(50))
         self.model.add(Dense(32, activation='relu'))
-        self.model.add(Dense(y_train_categorical.shape[1], activation='softmax'))  # Output layer
+        self.model.add(Dense(y_train_categorical.shape[1], activation='softmax'))
 
         # Compile the model
-        self.model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+        # self.model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+        # Now compile the model with the custom F1 score as a metric
+        self.model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=[f1_score])
 
         # Calculate class weights
         class_weights = compute_class_weight(
@@ -76,7 +132,7 @@ class TF_NN_Model(BaseModel):
         self.model.fit(
             self.X_train_scaled,
             y_train_categorical,
-            epochs=50,
+            epochs=70,
             batch_size=10,
             class_weight=class_weights_dict
         )
@@ -93,13 +149,15 @@ class TF_NN_Model(BaseModel):
         predicted_labels = np.argmax(predicted_probs, axis=1)
 
         # Assuming label_encoder was used to encode y_train
-        predicted_categories = self.label_encoder.inverse_transform(predicted_labels)
-        print("CHECK predicted_labels: ", predicted_categories)
-        return predicted_categories
+        self.predicted_categories = self.label_encoder.inverse_transform(predicted_labels)
+        print("CHECK predicted_labels: ", self.predicted_categories)
+        return self.predicted_categories
 
-    def evaluate(self, X, y):
+    def evaluate(self):
         # Implement evaluation logic
-        pass
+        # Assuming y_test is your true labels and predicted_labels is your model's predictions
+        print("Confusion Matrix:\n", confusion_matrix(self.y_test, self.predicted_categories))
+        print("\nClassification Report:\n", classification_report(self.y_test, self.predicted_categories, target_names=['Buy', 'Hold', 'Sell']))
 
 
 

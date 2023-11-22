@@ -90,4 +90,5 @@ print(f"Final Portfolio Value: {final_portfolio_value}")
 pnl_per_trade = ( final_portfolio_value - starting_cash ) / len(trade_log)
 print("PnL per trade: ", pnl_per_trade)
 
+model.evaluate()
 

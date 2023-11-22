@@ -28,15 +28,18 @@ class BaseModel:
 
         self.fft_features = None
 
+        self.predicted_categories = None
+
 
     def load_preprocess_data(self):
         self.data = pd.read_csv(self.file_path)
         self.perform_fourier_transform_analysis()
+        self.calculate_stochastic_oscillator()
         self.detect_peaks_and_troughs()
         self.calculate_moving_averages_and_rsi()
         self.calculate_days_since_peaks_and_troughs()
         self.preprocess_data()
-        
+
     def perform_fourier_transform_analysis(self):
         # Fourier Transform Analysis
         close_prices = self.data['Close'].to_numpy()
@@ -56,6 +59,32 @@ class BaseModel:
             'Amplitude': significant_amplitudes,
             'DaysPerCycle': days_per_cycle
         })
+
+    def calculate_stochastic_oscillator(self, k_window=14, d_window=3):
+        """
+        Calculate the Stochastic Oscillator.
+        %K = (Current Close - Lowest Low)/(Highest High - Lowest Low) * 100
+        %D = 3-day SMA of %K
+
+        Where:
+        - Lowest Low = lowest low for the look-back period
+        - Highest High = highest high for the look-back period
+        - %K is multiplied by 100 to move the decimal point two places
+
+        The result is two time series: %K and %D
+        """
+        # Calculate %K
+        low_min  = self.data['Low'].rolling(window=k_window).min()
+        high_max = self.data['High'].rolling(window=k_window).max()
+        self.data['%K'] = 100 * (self.data['Close'] - low_min) / (high_max - low_min)
+        
+        # Calculate %D as the moving average of %K
+        self.data['%D'] = self.data['%K'].rolling(window=d_window).mean()
+
+        # Handle any NaN values that may have been created
+        self.data['%K'].fillna(method='bfill', inplace=True)
+        self.data['%D'].fillna(method='bfill', inplace=True)
+
 
     def detect_peaks_and_troughs(self):
         # Peak and Trough Detection for Labeling
@@ -144,10 +173,10 @@ class BaseModel:
         self.split_idx = int(len(self.data) * (1 - test_size))
         
         # Split the data without shuffling
-        # self.X_train = self.data[['Short_Moving_Avg', 'Long_Moving_Avg', 'RSI', 'DaysSincePeak', 'DaysSinceTrough', 'PriceChangeSincePeak', 'PriceChangeSinceTrough']].iloc[:self.split_idx]
-        # self.X_test = self.data[['Short_Moving_Avg', 'Long_Moving_Avg', 'RSI', 'DaysSincePeak', 'DaysSinceTrough', 'PriceChangeSincePeak', 'PriceChangeSinceTrough']].iloc[self.split_idx:]
-        self.X_train = self.data[['Short_Moving_Avg', 'Long_Moving_Avg', 'RSI', 'DaysSincePeak', 'DaysSinceTrough']].iloc[:self.split_idx]
-        self.X_test = self.data[['Short_Moving_Avg', 'Long_Moving_Avg', 'RSI', 'DaysSincePeak', 'DaysSinceTrough']].iloc[self.split_idx:]
+        self.X_train = self.data[['Short_Moving_Avg', 'Long_Moving_Avg', 'RSI', 'DaysSincePeak', 'DaysSinceTrough', 'PriceChangeSincePeak', 'PriceChangeSinceTrough', '%K', '%D']].iloc[:self.split_idx]
+        self.X_test = self.data[['Short_Moving_Avg', 'Long_Moving_Avg', 'RSI', 'DaysSincePeak', 'DaysSinceTrough', 'PriceChangeSincePeak', 'PriceChangeSinceTrough', '%K', '%D']].iloc[self.split_idx:]
+        # self.X_train = self.data[['Short_Moving_Avg', 'Long_Moving_Avg', 'RSI', 'DaysSincePeak', 'DaysSinceTrough']].iloc[:self.split_idx]
+        # self.X_test = self.data[['Short_Moving_Avg', 'Long_Moving_Avg', 'RSI', 'DaysSincePeak', 'DaysSinceTrough']].iloc[self.split_idx:]
         self.y_train = self.data['Label'].iloc[:self.split_idx]
         self.y_test = self.data['Label'].iloc[self.split_idx:]
 

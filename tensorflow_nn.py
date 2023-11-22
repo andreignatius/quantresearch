@@ -22,7 +22,7 @@ from sklearn.utils.class_weight import compute_class_weight
 import random
 
 # Load the Forex data
-file_path = 'USD_JPY.csv'
+file_path = 'backtest/data/USD_JPY.csv'
 forex_data = pd.read_csv(file_path)
 
 # Fourier Transform Analysis
@@ -165,6 +165,7 @@ loss, accuracy = model.evaluate(X_test_scaled, y_test_categorical)
 print(f"Loss: {loss}, Accuracy: {accuracy}")
 
 # Generate predictions
+# predicted_probs = model.predict(X_test_scaled)
 predicted_probs = model.predict(X_test_scaled)
 
 # Convert probabilities to class labels

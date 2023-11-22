@@ -6,7 +6,7 @@ from scipy.signal import find_peaks
 
 # Load the CSV file
 # credit to : https://www.macrotrends.net/2550/dollar-yen-exchange-rate-historical-chart
-file_path = 'USD_JPY_long.csv'
+file_path = 'backtest/data/USD_JPY_long.csv'
 forex_data = pd.read_csv(file_path)
 
 # Selecting the 'Close' column for analysis

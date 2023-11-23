@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+import os
 from scipy.fft import fft
 from scipy.signal import find_peaks
 from sklearn.model_selection import train_test_split
@@ -11,7 +12,8 @@ from sklearn.metrics import roc_curve, auc
 from sklearn.model_selection import cross_val_score
 
 # Load the Forex data
-file_path = 'USD_JPY.csv'
+current_directory = os.getcwd()
+file_path = file_path = os.path.join(current_directory, 'backtest', 'data', 'USD_JPY.csv')
 forex_data = pd.read_csv(file_path)
 
 # Fourier Transform Analysis

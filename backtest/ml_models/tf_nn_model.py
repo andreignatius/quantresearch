@@ -151,11 +151,11 @@ class TF_NN_Model(BaseModel):
         # self.model.add(Dense(100, activation='relu'))
         # self.model.add(Dense(n_outputs, activation='softmax'))
 
-        self.model.add(Conv1D(filters=32, kernel_size=3, activation='relu', input_shape=(self.X_train_scaled.shape[1], self.X_train_scaled.shape[2])))
+        self.model.add(Conv1D(filters=64, kernel_size=7, activation='relu', input_shape=(self.X_train_scaled.shape[1], self.X_train_scaled.shape[2])))
         self.model.add(MaxPooling1D(pool_size=2))
-        self.model.add(LSTM(50, return_sequences=True))
-        self.model.add(LSTM(50))
-        self.model.add(Dense(32, activation='relu'))
+        self.model.add(LSTM(100, return_sequences=True))
+        self.model.add(LSTM(100))
+        self.model.add(Dense(64, activation='relu'))
         self.model.add(Dense(y_train_categorical.shape[1], activation='softmax'))
 
         # Compile the model

@@ -92,6 +92,8 @@ final_dataset_with_new_features.dropna(inplace=True)
 checkpoint_date_bottom = None  # Initialize to a sensible default or first date
 checkpoint_date_top = None  # Initialize to a sensible default or first date
 
+
+
 for index, row in final_dataset_with_new_features.iterrows():
     print("index: ", index, "row: ", row)
     current_price = row['Open']
@@ -112,14 +114,21 @@ for index, row in final_dataset_with_new_features.iterrows():
 
     # final_dataset_with_new_features.at[index, 'DaysSincePeakTrough'] = max(days_since_bottom, days_since_peak)
     final_dataset_with_new_features.at[index, 'DaysSincePeak'] = days_since_peak
-    final_dataset_with_new_features.at[index, 'DaysSincePeakTrough'] = days_since_bottom
+    final_dataset_with_new_features.at[index, 'DaysSinceTrough'] = days_since_bottom
 
+
+# Add in fourier transform
+top_10_cycles = (fft_features.loc[:10,'DaysPerCycle'].values/2).astype(int)
+final_dataset_with_new_features['Fourier_sell'] = final_dataset_with_new_features['DaysSinceTrough'].isin(top_10_cycles)
+final_dataset_with_new_features['Fourier_buy'] = final_dataset_with_new_features['DaysSincePeak'].isin(top_10_cycles)
+
+final_dataset_with_new_features
 
 final_dataset_with_new_features.to_csv('final_dataset_with_new_features.csv')
 # print("check final_dataset_with_new_features: ", final_dataset_with_new_features)
 # X = final_dataset_with_new_features[['Frequency', 'Amplitude', 'DaysPerCycle', 'Short_Moving_Avg', 'Long_Moving_Avg', 'RSI']]
 
-X = final_dataset_with_new_features[['Short_Moving_Avg', 'Long_Moving_Avg', 'RSI', 'DaysSincePeak', 'DaysSincePeakTrough']]
+X = final_dataset_with_new_features[['Short_Moving_Avg', 'Long_Moving_Avg', 'RSI', 'DaysSincePeak', 'DaysSinceTrough', 'Fourier_sell', 'Fourier_buy']]
 y = final_dataset_with_new_features['Label']
 
 # Splitting the dataset and standardizing features
@@ -205,3 +214,5 @@ final_portfolio_value = cash + shares * final_dataset_with_new_features.iloc[-1]
 for log in trade_log:
     print(log)
 print(f"Final Portfolio Value: {final_portfolio_value}")
+
+

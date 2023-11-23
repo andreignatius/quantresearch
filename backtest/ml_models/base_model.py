@@ -33,8 +33,10 @@ class BaseModel:
         self.data = pd.read_csv(self.file_path)
         self.perform_fourier_transform_analysis()
         self.detect_peaks_and_troughs()
+        
         self.calculate_moving_averages_and_rsi()
         self.calculate_days_since_peaks_and_troughs()
+        self.detect_fourier_signals()
         self.preprocess_data()
         
     def perform_fourier_transform_analysis(self):
@@ -56,6 +58,17 @@ class BaseModel:
             'Amplitude': significant_amplitudes,
             'DaysPerCycle': days_per_cycle
         })
+
+    def detect_fourier_signals(self):
+        # Add in fourier transform
+        top_10_cycles = (self.fft_features.loc[:10,'DaysPerCycle'].values/2).astype(int)
+        self.data['Fourier_sell'] = self.data['DaysSinceTrough'].isin(top_10_cycles)
+        self.data['Fourier_buy'] = self.data['DaysSincePeak'].isin(top_10_cycles)
+        # self.data.at[index, 'DaysSincePeak'] = days_since_peak
+        # self.data.at[index, 'DaysSinceTrough'] = days_since_bottom
+        print("Fourier_sell: ", self.data['Fourier_sell'])
+        print("Fourier_buy: ", self.data['Fourier_buy'])
+
 
     def detect_peaks_and_troughs(self):
         # Peak and Trough Detection for Labeling
@@ -146,8 +159,8 @@ class BaseModel:
         # Split the data without shuffling
         # self.X_train = self.data[['Short_Moving_Avg', 'Long_Moving_Avg', 'RSI', 'DaysSincePeak', 'DaysSinceTrough', 'PriceChangeSincePeak', 'PriceChangeSinceTrough']].iloc[:self.split_idx]
         # self.X_test = self.data[['Short_Moving_Avg', 'Long_Moving_Avg', 'RSI', 'DaysSincePeak', 'DaysSinceTrough', 'PriceChangeSincePeak', 'PriceChangeSinceTrough']].iloc[self.split_idx:]
-        self.X_train = self.data[['Short_Moving_Avg', 'Long_Moving_Avg', 'RSI', 'DaysSincePeak', 'DaysSinceTrough']].iloc[:self.split_idx]
-        self.X_test = self.data[['Short_Moving_Avg', 'Long_Moving_Avg', 'RSI', 'DaysSincePeak', 'DaysSinceTrough']].iloc[self.split_idx:]
+        self.X_train = self.data[['Short_Moving_Avg', 'Long_Moving_Avg', 'RSI', 'DaysSincePeak', 'DaysSinceTrough', 'Fourier_sell', 'Fourier_buy']].iloc[:self.split_idx]
+        self.X_test = self.data[['Short_Moving_Avg', 'Long_Moving_Avg', 'RSI', 'DaysSincePeak', 'DaysSinceTrough', 'Fourier_sell', 'Fourier_buy']].iloc[self.split_idx:]
         self.y_train = self.data['Label'].iloc[:self.split_idx]
         self.y_test = self.data['Label'].iloc[self.split_idx:]
 
@@ -170,3 +183,5 @@ class BaseModel:
     def evaluate(self, X, y):
         # Implement evaluation logic
         pass
+
+

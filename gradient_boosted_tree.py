@@ -10,7 +10,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import classification_report, confusion_matrix
 
-from imblearn.over_sampling import SMOTE
+# from imblearn.over_sampling import SMOTE
 from sklearn.ensemble import GradientBoostingClassifier
 
 # Load the Forex data
@@ -113,13 +113,18 @@ for index, row in final_dataset_with_new_features.iterrows():
 
     # final_dataset_with_new_features.at[index, 'DaysSincePeakTrough'] = max(days_since_bottom, days_since_peak)
     final_dataset_with_new_features.at[index, 'DaysSincePeak'] = days_since_peak
-    final_dataset_with_new_features.at[index, 'DaysSincePeakTrough'] = days_since_bottom
-    
+    final_dataset_with_new_features.at[index, 'DaysSinceTrough'] = days_since_bottom
+
+
+# Add in fourier transform
+top_10_cycles = (fft_features.loc[:10,'DaysPerCycle'].values/2).astype(int)
+final_dataset_with_new_features['Fourier_sell'] = final_dataset_with_new_features['DaysSinceTrough'].isin(top_10_cycles)
+final_dataset_with_new_features['Fourier_buy'] = final_dataset_with_new_features['DaysSincePeak'].isin(top_10_cycles)
 
 final_dataset_with_new_features.to_csv('final_dataset_with_new_features.csv')
 # print("check final_dataset_with_new_features: ", final_dataset_with_new_features)
 # X = final_dataset_with_new_features[['Frequency', 'Amplitude', 'DaysPerCycle', 'Short_Moving_Avg', 'Long_Moving_Avg', 'RSI']]
-X = final_dataset_with_new_features[['Short_Moving_Avg', 'Long_Moving_Avg', 'RSI', 'DaysSincePeak', 'DaysSincePeakTrough']]
+X = final_dataset_with_new_features[['Short_Moving_Avg', 'Long_Moving_Avg', 'RSI', 'DaysSincePeak', 'DaysSinceTrough', 'Fourier_sell', 'Fourier_buy']]
 # X = final_dataset_with_new_features[['Short_Moving_Avg', 'Long_Moving_Avg', 'RSI']]
 y = final_dataset_with_new_features['Label']
 
@@ -130,16 +135,15 @@ scaler = StandardScaler()
 X_train_scaled = scaler.fit_transform(X_train)
 X_test_scaled = scaler.transform(X_test)
 
-
-
-
+# +
 # Apply SMOTE
-smote = SMOTE()
-X_train_smote, y_train_smote = smote.fit_resample(X_train_scaled, y_train)
+# smote = SMOTE()
+# X_train_smote, y_train_smote = smote.fit_resample(X_train_scaled, y_train)
+# -
 
 # Train the GBT model on the balanced dataset
 gbt_model = GradientBoostingClassifier()
-gbt_model.fit(X_train_smote, y_train_smote)
+gbt_model.fit(X_train, y_train)
 
 
 
@@ -204,3 +208,5 @@ final_portfolio_value = cash + shares * final_dataset_with_new_features.iloc[-1]
 for log in trade_log:
     print(log)
 print(f"Final Portfolio Value: {final_portfolio_value}")
+
+

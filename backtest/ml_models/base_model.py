@@ -92,13 +92,14 @@ class BaseModel:
 
     def detect_fourier_signals(self):
         # Add in fourier transform
-        top_10_cycles = (self.fft_features.loc[:10,'DaysPerCycle'].values/2).astype(int)
-        self.data['Fourier_sell'] = self.data['DaysSinceTrough'].isin(top_10_cycles)
-        self.data['Fourier_buy'] = self.data['DaysSincePeak'].isin(top_10_cycles)
+        dominant_period_lengths = sorted(set((self.fft_features.loc[:10,'DaysPerCycle'].values/2).astype(int)), reverse=True)[:5]
+        print("check dominant_period_lengths: ", dominant_period_lengths)
+        self.data['FourierSignalSell'] = self.data['DaysSinceTrough'].isin(dominant_period_lengths)
+        self.data['FourierSignalBuy'] = self.data['DaysSincePeak'].isin(dominant_period_lengths)
         # self.data.at[index, 'DaysSincePeak'] = days_since_peak
         # self.data.at[index, 'DaysSinceTrough'] = days_since_bottom
-        print("Fourier_sell: ", self.data['Fourier_sell'])
-        print("Fourier_buy: ", self.data['Fourier_buy'])
+        print("FourierSignalSell: ", self.data['FourierSignalSell'])
+        print("FourierSignalBuy: ", self.data['FourierSignalBuy'])
 
 
     def detect_peaks_and_troughs(self):
@@ -217,8 +218,8 @@ class BaseModel:
 
         # self.X_train = self.data[['Short_Moving_Avg', 'Long_Moving_Avg', 'RSI', 'DaysSincePeak', 'DaysSinceTrough', 'PriceChangeSincePeak', 'PriceChangeSinceTrough']].iloc[:self.split_idx]
         # self.X_test = self.data[['Short_Moving_Avg', 'Long_Moving_Avg', 'RSI', 'DaysSincePeak', 'DaysSinceTrough', 'PriceChangeSincePeak', 'PriceChangeSinceTrough']].iloc[self.split_idx:]
-        self.X_train = self.data[['Short_Moving_Avg', 'Long_Moving_Avg', 'RSI', 'DaysSincePeak', 'DaysSinceTrough', 'Fourier_sell', 'Fourier_buy']].iloc[:self.split_idx]
-        self.X_test = self.data[['Short_Moving_Avg', 'Long_Moving_Avg', 'RSI', 'DaysSincePeak', 'DaysSinceTrough', 'Fourier_sell', 'Fourier_buy']].iloc[self.split_idx:]
+        self.X_train = self.data[['Short_Moving_Avg', 'Long_Moving_Avg', 'RSI', 'DaysSincePeak', 'DaysSinceTrough', 'FourierSignalSell', 'FourierSignalBuy', '%K', '%D', 'KalmanFilterEst']].iloc[:self.split_idx]
+        self.X_test = self.data[['Short_Moving_Avg', 'Long_Moving_Avg', 'RSI', 'DaysSincePeak', 'DaysSinceTrough', 'FourierSignalSell', 'FourierSignalBuy', '%K', '%D', 'KalmanFilterEst']].iloc[self.split_idx:]
 
         self.y_train = self.data['Label'].iloc[:self.split_idx]
         self.y_test = self.data['Label'].iloc[self.split_idx:]

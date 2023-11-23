@@ -9,13 +9,14 @@ from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.metrics import classification_report, confusion_matrix
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import roc_curve, auc
+from sklearn.metrics import f1_score as sklearn_f1_score
 from sklearn.model_selection import cross_val_score
 from imblearn.over_sampling import SMOTE
-
 
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import LSTM, Dense, Dropout, Conv1D, MaxPooling1D, Flatten
 from tensorflow.keras.utils import to_categorical
+from tensorflow.keras.callbacks import Callback
 from keras import backend as K
 
 import torch
@@ -45,6 +46,48 @@ def f1_score(y_true, y_pred):
     # Calculate F1 score
     f1_val = 2 * (precision * recall) / (precision + recall + K.epsilon())
     return f1_val
+
+# class F1ScoreThresholdCallback(Callback):
+#     def __init__(self, threshold=0.9, validation_data=()):
+#         super(F1ScoreThresholdCallback, self).__init__()
+#         self.threshold = threshold
+#         self.validation_data = validation_data
+
+#     def on_epoch_end(self, epoch, logs={}):
+#         X_val, y_val = self.validation_data
+#         y_pred = self.model.predict(X_val)
+#         # Convert predictions and true values to binary format
+#         y_pred_binary = np.argmax(y_pred, axis=1)
+#         y_val_binary = np.argmax(y_val, axis=1)
+        
+#         # Calculate F1 Score
+#         _f1_score = sklearn_f1_score(y_val_binary, y_pred_binary, average='macro')  # Use 'macro' or 'weighted' based on your requirement
+#         print("Epoch: {} - F1 Score: {:.4f}".format(epoch+1, _f1_score))
+        
+#         # Check if F1 score threshold is met or exceeded
+#         if _f1_score > self.threshold:
+#             print("F1 Score threshold reached, stopping training.")
+#             self.model.stop_training = True
+
+class F1ScoreThresholdCallback(Callback):
+    def __init__(self, f1_threshold=0.9, loss_threshold=0.2, validation_data=()):
+        super(F1ScoreThresholdCallback, self).__init__()
+        self.f1_threshold = f1_threshold
+        self.loss_threshold = loss_threshold
+        self.validation_data = validation_data
+
+    def on_epoch_end(self, epoch, logs={}):
+        # Check if F1 score in training logs exceeds the threshold
+        f1_score_epoch = logs.get('f1_score', 0)  # Assuming 'val_f1_score' is the key for F1 score in validation
+        loss_epoch = logs.get('loss', 0)
+        print("Epoch: {} - Validation F1 Score: {:.4f}".format(epoch+1, f1_score_epoch))
+        print("Epoch: {} - Validation Loss: {:.4f}".format(epoch+1, loss_epoch))
+        
+        # Check if F1 score threshold is met or exceeded
+        if f1_score_epoch > self.f1_threshold and loss_epoch < self.loss_threshold:
+            print("F1 Score and Loss threshold reached, stopping training.")
+            self.model.stop_training = True
+
 
 class TF_NN_Model(BaseModel):
     def __init__(self, file_path):
@@ -128,13 +171,16 @@ class TF_NN_Model(BaseModel):
         )
         class_weights_dict = dict(enumerate(class_weights))
 
+        f1_score_callback = F1ScoreThresholdCallback(f1_threshold=0.9, loss_threshold=0.1, validation_data=(self.X_test_scaled, y_test_categorical))
+
         # Then pass these weights to the 'fit' method
         self.model.fit(
             self.X_train_scaled,
             y_train_categorical,
             epochs=70,
             batch_size=10,
-            class_weight=class_weights_dict
+            class_weight=class_weights_dict,
+            callbacks=[f1_score_callback]
         )
         # # Train the model
         # self.model.fit(self.X_train_scaled, y_train_categorical, epochs=50, batch_size=10)

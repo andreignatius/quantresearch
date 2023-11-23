@@ -116,8 +116,9 @@ for index, row in final_dataset_with_new_features.iterrows():
     final_dataset_with_new_features.at[index, 'DaysSincePeak'] = days_since_peak
     final_dataset_with_new_features.at[index, 'DaysSincePeakTrough'] = days_since_bottom
 
+# Save the final dataset to backtest/data
+final_dataset_with_new_features.to_csv(os.path.join(os.path.dirname(file_path), 'final_dataset_with_new_features.csv'))
 
-final_dataset_with_new_features.to_csv('final_dataset_with_new_features.csv')
 # print("check final_dataset_with_new_features: ", final_dataset_with_new_features)
 # X = final_dataset_with_new_features[['Frequency', 'Amplitude', 'DaysPerCycle', 'Short_Moving_Avg', 'Long_Moving_Avg', 'RSI']]
 

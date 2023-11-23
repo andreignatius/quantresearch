@@ -3,6 +3,7 @@ from scipy.fft import fft
 import numpy as np
 from scipy.signal import find_peaks
 from sklearn.preprocessing import StandardScaler
+from pykalman import KalmanFilter
 
 class BaseModel:
     def __init__(self, file_path):
@@ -35,6 +36,7 @@ class BaseModel:
         self.data = pd.read_csv(self.file_path)
         self.perform_fourier_transform_analysis()
         self.calculate_stochastic_oscillator()
+        self.construct_kalman_filter()
         self.detect_peaks_and_troughs()
         self.calculate_moving_averages_and_rsi()
         self.calculate_days_since_peaks_and_troughs()
@@ -121,6 +123,25 @@ class BaseModel:
         self.data['Long_Moving_Avg'] = self.data['Close'].rolling(window=long_window).mean()
         self.data['RSI'] = self.calculate_rsi(window=rsi_period)
 
+    def construct_kalman_filter(self):
+        close_prices = self.data['Close']
+        # Construct a Kalman Filter
+        kf = KalmanFilter(initial_state_mean=0, n_dim_obs=1)
+
+        # Use the observed data (close prices) to estimate the state
+        state_means, _ = kf.filter(close_prices.values)
+
+        # Convert state means to a Pandas Series for easy plotting
+        kalman_estimates = pd.Series(state_means.flatten(), index=self.data.index)
+
+        # Combine the original close prices and Kalman Filter estimates
+        kalman_estimates = pd.DataFrame({
+            'KalmanFilterEst': kalman_estimates
+        })
+        self.data = self.data.join(kalman_estimates)
+
+        # print('KalmanFilterEst: ', self.data['KalmanFilterEst'])  # Display the first few rows of the dataframe
+
     def calculate_days_since_peaks_and_troughs(self):
         self.data['DaysSincePeak'] = 0
         self.data['DaysSinceTrough'] = 0
@@ -156,6 +177,8 @@ class BaseModel:
             # final_dataset_with_new_features.at[index, 'DaysSincePeakTrough'] = max(days_since_bottom, days_since_peak)
             self.data.at[index, 'DaysSincePeak'] = days_since_peak
             self.data.at[index, 'DaysSinceTrough'] = days_since_bottom
+            self.data.at[index, 'FourierSignalSell'] = ( (days_since_peak % 6 == 0) or (days_since_peak % 7 == 0) )
+            self.data.at[index, 'FourierSignalBuy'] = ( (days_since_bottom % 6 == 0) or (days_since_bottom % 7 == 0) )
             self.data.at[index, 'PriceChangeSincePeak'] = price_change_since_peak
             self.data.at[index, 'PriceChangeSinceTrough'] = price_change_since_bottom
 
@@ -171,10 +194,10 @@ class BaseModel:
         
         # Find the split point
         self.split_idx = int(len(self.data) * (1 - test_size))
-        
+        self.data.to_csv('final_dataset_with_new_features.csv')
         # Split the data without shuffling
-        self.X_train = self.data[['Short_Moving_Avg', 'Long_Moving_Avg', 'RSI', 'DaysSincePeak', 'DaysSinceTrough', 'PriceChangeSincePeak', 'PriceChangeSinceTrough', '%K', '%D']].iloc[:self.split_idx]
-        self.X_test = self.data[['Short_Moving_Avg', 'Long_Moving_Avg', 'RSI', 'DaysSincePeak', 'DaysSinceTrough', 'PriceChangeSincePeak', 'PriceChangeSinceTrough', '%K', '%D']].iloc[self.split_idx:]
+        self.X_train = self.data[['Short_Moving_Avg', 'Long_Moving_Avg', 'RSI', 'DaysSincePeak', 'DaysSinceTrough', 'FourierSignalSell', 'FourierSignalBuy', 'PriceChangeSincePeak', 'PriceChangeSinceTrough', '%K', '%D', 'KalmanFilterEst']].iloc[:self.split_idx]
+        self.X_test = self.data[['Short_Moving_Avg', 'Long_Moving_Avg', 'RSI', 'DaysSincePeak', 'DaysSinceTrough', 'FourierSignalSell', 'FourierSignalBuy', 'PriceChangeSincePeak', 'PriceChangeSinceTrough', '%K', '%D', 'KalmanFilterEst']].iloc[self.split_idx:]
         # self.X_train = self.data[['Short_Moving_Avg', 'Long_Moving_Avg', 'RSI', 'DaysSincePeak', 'DaysSinceTrough']].iloc[:self.split_idx]
         # self.X_test = self.data[['Short_Moving_Avg', 'Long_Moving_Avg', 'RSI', 'DaysSincePeak', 'DaysSinceTrough']].iloc[self.split_idx:]
         self.y_train = self.data['Label'].iloc[:self.split_idx]

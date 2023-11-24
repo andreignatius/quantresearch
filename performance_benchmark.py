@@ -163,6 +163,7 @@ final_dataset_with_new_features['PredictedLabel'] = logreg.predict(scaler.transf
 stop_loss_threshold = 0.05  # 5% drop from buying price
 take_profit_threshold = 0.05  # 5% rise from buying price
 cash = 10000  # Starting cash
+starting_cash = cash
 trading_lot = 2000
 shares = 0    # Number of shares held
 trade_log = []  # Log of trades
@@ -204,7 +205,17 @@ for index, row in final_dataset_with_new_features.iterrows():
 # Calculate final portfolio value
 final_portfolio_value = cash + shares * final_dataset_with_new_features.iloc[-1]['Open']
 
-# Output
+##### Outputs
+# Final portfolio value
 for log in trade_log:
     print(log)
 print(f"Final Portfolio Value: {final_portfolio_value}")
+
+# Total Number of Transactions
+print("num trades: ", len(trade_log))
+
+# P&L Per Trade
+pnl_per_trade = (final_portfolio_value - starting_cash)/len(trade_log)
+print("PnL per trade: ", pnl_per_trade)
+
+

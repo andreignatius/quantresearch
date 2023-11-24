@@ -14,7 +14,7 @@ from sklearn.model_selection import cross_val_score
 from ml_models.logreg_model import LogRegModel
 
 # Load the Forex data
-file_path = 'data/USD_JPY.csv'
+file_path = 'backtest/data/USD_JPY.csv'
 model = LogRegModel(file_path)
 
 model.load_preprocess_data()

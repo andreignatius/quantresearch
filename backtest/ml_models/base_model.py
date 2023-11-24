@@ -4,6 +4,7 @@ import numpy as np
 from scipy.signal import find_peaks
 from sklearn.preprocessing import StandardScaler
 from pykalman import KalmanFilter
+from hurst import compute_Hc
 
 class BaseModel:
     def __init__(self, file_path):
@@ -40,6 +41,7 @@ class BaseModel:
         self.detect_peaks_and_troughs()
         
         self.calculate_moving_averages_and_rsi()
+        self.estimate_hurst_exponent()
         self.calculate_days_since_peaks_and_troughs()
         self.detect_fourier_signals()
         self.preprocess_data()
@@ -156,6 +158,34 @@ class BaseModel:
 
         # print('KalmanFilterEst: ', self.data['KalmanFilterEst'])  # Display the first few rows of the dataframe
 
+    # Function to estimate Hurst exponent over multiple sliding windows
+    def estimate_hurst_exponent(self, window_size=100, step_size=1):
+        """
+        Calculates the Hurst exponent over sliding windows and appends the results to the DataFrame.
+        
+        :param window_size: Size of each sliding window.
+        :param step_size: Step size for moving the window.
+        """
+        # Prepare an empty list to store Hurst exponent results and corresponding dates
+        hurst_exponents = []
+
+        for i in range(0, len(self.data) - window_size + 1, step_size):
+            # Extract the window
+            window = self.data['Close'].iloc[i:i + window_size]
+            
+            # Calculate the Hurst exponent
+            H, _, _ = compute_Hc(window, kind='price', simplified=True)
+            
+            # Store the result along with the starting date of the window
+            hurst_exponents.append({'Date': self.data['Date'].iloc[i], 'HurstExponent': H})
+
+        # Convert the results list into a DataFrame
+        hurst_exponents = pd.DataFrame(hurst_exponents)
+
+        # Combine the original DataFrame and Hurst exponent estimates
+        self.data = self.data.merge(hurst_exponents, on='Date', how='left')
+
+
     def calculate_days_since_peaks_and_troughs(self):
         self.data['DaysSincePeak'] = 0
         self.data['DaysSinceTrough'] = 0
@@ -218,8 +248,8 @@ class BaseModel:
 
         # self.X_train = self.data[['Short_Moving_Avg', 'Long_Moving_Avg', 'RSI', 'DaysSincePeak', 'DaysSinceTrough', 'PriceChangeSincePeak', 'PriceChangeSinceTrough']].iloc[:self.split_idx]
         # self.X_test = self.data[['Short_Moving_Avg', 'Long_Moving_Avg', 'RSI', 'DaysSincePeak', 'DaysSinceTrough', 'PriceChangeSincePeak', 'PriceChangeSinceTrough']].iloc[self.split_idx:]
-        self.X_train = self.data[['Short_Moving_Avg', 'Long_Moving_Avg', 'RSI', 'DaysSincePeak', 'DaysSinceTrough', 'FourierSignalSell', 'FourierSignalBuy', '%K', '%D', 'KalmanFilterEst']].iloc[:self.split_idx]
-        self.X_test = self.data[['Short_Moving_Avg', 'Long_Moving_Avg', 'RSI', 'DaysSincePeak', 'DaysSinceTrough', 'FourierSignalSell', 'FourierSignalBuy', '%K', '%D', 'KalmanFilterEst']].iloc[self.split_idx:]
+        self.X_train = self.data[['Short_Moving_Avg', 'Long_Moving_Avg', 'RSI', 'DaysSincePeak', 'DaysSinceTrough', 'FourierSignalSell', 'FourierSignalBuy', '%K', '%D', 'KalmanFilterEst', 'HurstExponent']].iloc[:self.split_idx]
+        self.X_test = self.data[['Short_Moving_Avg', 'Long_Moving_Avg', 'RSI', 'DaysSincePeak', 'DaysSinceTrough', 'FourierSignalSell', 'FourierSignalBuy', '%K', '%D', 'KalmanFilterEst', 'HurstExponent']].iloc[self.split_idx:]
 
         self.y_train = self.data['Label'].iloc[:self.split_idx]
         self.y_test = self.data['Label'].iloc[self.split_idx:]

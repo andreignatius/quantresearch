@@ -1,12 +1,14 @@
 from ml_models.base_model import BaseModel
+import os
 
 # Load the Forex data
-file_path = 'data/USD_JPY.csv'
+# current_directory = os.getcwd()
+current_directory = os.path.dirname(__file__)
+file_path = os.path.join(current_directory, 'data/USD_JPY.csv')
 # file_path = 'data/USD_JPY_bbg.csv'
 model = BaseModel(file_path)
 
 model.load_preprocess_data()
-
 data = model.retrieve_test_set()
 
 # Backtesting with stop-loss and take-profit

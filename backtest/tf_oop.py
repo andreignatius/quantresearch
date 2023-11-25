@@ -8,6 +8,8 @@ from sklearn.metrics import classification_report, confusion_matrix
 
 import pandas as pd
 import numpy as np
+import os
+
 from scipy.fft import fft
 from scipy.signal import find_peaks
 from sklearn.model_selection import train_test_split
@@ -34,7 +36,8 @@ import random
 
 from ml_models.tf_nn_model import TF_NN_Model
 # Load the Forex data
-file_path = 'data/USD_JPY.csv'
+current_directory = os.path.dirname(__file__)
+file_path = os.path.join(current_directory, 'data/USD_JPY.csv')
 # file_path = 'data/USD_JPY_bbg.csv'
 model = TF_NN_Model(file_path)
 

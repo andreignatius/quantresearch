@@ -27,30 +27,46 @@ print("Final Portfolio Value: $", round((1+gains)*investment,2) )
 print()
 
 # Calculate Excess Returns for Performance Benchmark
-output = subprocess.check_output(['python', 'performance_benchmark.py'], universal_newlines=True)
+output = subprocess.check_output(['python', 'backtest/benchmark.py'], universal_newlines=True)
 match = re.search(r"Final Portfolio Value:\s*([\d.]+)", output)
 if match:
     final_portfolio_value = float(match.group(1))
     pb_excess = final_portfolio_value - (1+gains)*investment
     print("Performance Benchmark Returns: $", round(final_portfolio_value,2))
     print("Performance Benchmark Excess Returns: $", round(pb_excess,2))
-else:
-    pass
 
 # Line Break
 print()
 
 # Calculate Excess Returns for Logistic Regression
-output = subprocess.check_output(['python', 'backtest\logreg_oop.py'], universal_newlines=True)
+output = subprocess.check_output(['python', 'backtest/logreg_oop.py'], universal_newlines=True)
 match = re.search(r"Final Portfolio Value:\s*([\d.]+)", output)
 if match:
     final_portfolio_value = float(match.group(1))
     pb_excess = final_portfolio_value - (1+gains)*investment
     print("Logistic Regression Returns: $", round(final_portfolio_value,2))
     print("Logistic Regression Excess Returns: $", round(pb_excess,2))
-else:
-    pass
 
+# Line Break
+print()
 
+# Calculate Excess Returns for Gradient Boosted Trees
+output = subprocess.check_output(['python', 'backtest/gbt_oop.py'], universal_newlines=True)
+match = re.search(r"Final Portfolio Value:\s*([\d.]+)", output)
+if match:
+    final_portfolio_value = float(match.group(1))
+    pb_excess = final_portfolio_value - (1+gains)*investment
+    print("GBT Returns: $", round(final_portfolio_value,2))
+    print("GBT Excess Returns: $", round(pb_excess,2))
 
+# Line Break
+print()
 
+# Calculate Excess Returns for Tensorflow/Neural Network
+output = subprocess.check_output(['python', 'backtest/tf_oop.py'], universal_newlines=True)
+match = re.search(r"Final Portfolio Value:\s*([\d.]+)", output)
+if match:
+    final_portfolio_value = float(match.group(1))
+    pb_excess = final_portfolio_value - (1+gains)*investment
+    print("NN Returns: $", round(final_portfolio_value,2))
+    print("NN Excess Returns: $", round(pb_excess,2))

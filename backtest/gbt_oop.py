@@ -1,5 +1,7 @@
 import pandas as pd
 import numpy as np
+import os
+
 from scipy.fft import fft
 from scipy.signal import find_peaks
 from sklearn.model_selection import train_test_split
@@ -14,7 +16,8 @@ from sklearn.model_selection import cross_val_score
 from ml_models.gbt_model import GBTModel
 
 # Load the Forex data
-file_path = 'data/USD_JPY.csv'
+current_directory = os.path.dirname(__file__)
+file_path = os.path.join(current_directory, 'data/USD_JPY.csv')
 # file_path = 'data/USD_JPY_bbg.csv'
 model = GBTModel(file_path)
 

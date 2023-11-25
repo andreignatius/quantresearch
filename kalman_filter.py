@@ -25,4 +25,3 @@ combined_data = pd.DataFrame({
 })
 
 print(combined_data.head())  # Display the first few rows of the dataframe
-

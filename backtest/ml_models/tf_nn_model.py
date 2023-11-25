@@ -39,10 +39,14 @@ import random
 from .base_model import BaseModel
 
 # Define a custom F1 score metric
+
+
 def f1_score(y_true, y_pred):
     # Calculate precision and recall
-    precision = K.sum(K.round(K.clip(y_true * y_pred, 0, 1))) / K.sum(K.round(K.clip(y_pred, 0, 1)))
-    recall = K.sum(K.round(K.clip(y_true * y_pred, 0, 1))) / K.sum(K.round(K.clip(y_true, 0, 1)))
+    precision = K.sum(K.round(K.clip(y_true * y_pred, 0, 1))
+                      ) / K.sum(K.round(K.clip(y_pred, 0, 1)))
+    recall = K.sum(K.round(K.clip(y_true * y_pred, 0, 1))) / \
+        K.sum(K.round(K.clip(y_true, 0, 1)))
     # Calculate F1 score
     f1_val = 2 * (precision * recall) / (precision + recall + K.epsilon())
     return f1_val
@@ -59,15 +63,16 @@ def f1_score(y_true, y_pred):
 #         # Convert predictions and true values to binary format
 #         y_pred_binary = np.argmax(y_pred, axis=1)
 #         y_val_binary = np.argmax(y_val, axis=1)
-        
+
 #         # Calculate F1 Score
 #         _f1_score = sklearn_f1_score(y_val_binary, y_pred_binary, average='macro')  # Use 'macro' or 'weighted' based on your requirement
 #         print("Epoch: {} - F1 Score: {:.4f}".format(epoch+1, _f1_score))
-        
+
 #         # Check if F1 score threshold is met or exceeded
 #         if _f1_score > self.threshold:
 #             print("F1 Score threshold reached, stopping training.")
 #             self.model.stop_training = True
+
 
 class F1ScoreThresholdCallback(Callback):
     def __init__(self, f1_threshold=0.9, loss_threshold=0.2, validation_data=()):
@@ -78,11 +83,12 @@ class F1ScoreThresholdCallback(Callback):
 
     def on_epoch_end(self, epoch, logs={}):
         # Check if F1 score in training logs exceeds the threshold
-        f1_score_epoch = logs.get('f1_score', 0)  # Assuming 'val_f1_score' is the key for F1 score in validation
+        # Assuming 'val_f1_score' is the key for F1 score in validation
+        f1_score_epoch = logs.get('f1_score', 0)
         loss_epoch = logs.get('loss', 0)
         print("Epoch: {} - Validation F1 Score: {:.4f}".format(epoch+1, f1_score_epoch))
         print("Epoch: {} - Validation Loss: {:.4f}".format(epoch+1, loss_epoch))
-        
+
         # Check if F1 score threshold is met or exceeded
         if f1_score_epoch > self.f1_threshold and loss_epoch < self.loss_threshold:
             print("F1 Score and Loss threshold reached, stopping training.")
@@ -116,23 +122,20 @@ class TF_NN_Model(BaseModel):
         self.X_train_scaled = self.scaler.fit_transform(self.X_train)
         self.X_test_scaled = self.scaler.transform(self.X_test)
 
-        
-
         # self.X_train_scaled = self.reshape_for_lstm(self.X_train_scaled, n_timesteps)
         # self.X_test_scaled = self.reshape_for_lstm(self.X_test_scaled, n_timesteps)
-        
+
         # self.X_train_scaled = self.scaler.fit_transform(self.X_train)
         # self.X_test_scaled = self.scaler.transform(self.X_test)
 
-        self.X_train_scaled, self.y_train = self.reshape_for_lstm(self.X_train_scaled, self.y_train, n_timesteps)
-        self.X_test_scaled, self.y_test = self.reshape_for_lstm(self.X_test_scaled, self.y_test, n_timesteps)
-
+        self.X_train_scaled, self.y_train = self.reshape_for_lstm(
+            self.X_train_scaled, self.y_train, n_timesteps)
+        self.X_test_scaled, self.y_test = self.reshape_for_lstm(
+            self.X_test_scaled, self.y_test, n_timesteps)
 
         # Convert labels to tensors and apply one-hot encoding
         y_train_encoded = self.label_encoder.fit_transform(self.y_train)
         y_test_encoded = self.label_encoder.transform(self.y_test)
-
-        
 
         # Convert labels to categorical (one-hot encoding)
         y_train_categorical = to_categorical(y_train_encoded)
@@ -151,17 +154,20 @@ class TF_NN_Model(BaseModel):
         # self.model.add(Dense(100, activation='relu'))
         # self.model.add(Dense(n_outputs, activation='softmax'))
 
-        self.model.add(Conv1D(filters=64, kernel_size=7, activation='relu', input_shape=(self.X_train_scaled.shape[1], self.X_train_scaled.shape[2])))
+        self.model.add(Conv1D(filters=64, kernel_size=7, activation='relu', input_shape=(
+            self.X_train_scaled.shape[1], self.X_train_scaled.shape[2])))
         self.model.add(MaxPooling1D(pool_size=2))
         self.model.add(LSTM(100, return_sequences=True))
         self.model.add(LSTM(100))
         self.model.add(Dense(64, activation='relu'))
-        self.model.add(Dense(y_train_categorical.shape[1], activation='softmax'))
+        self.model.add(
+            Dense(y_train_categorical.shape[1], activation='softmax'))
 
         # Compile the model
         # self.model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
         # Now compile the model with the custom F1 score as a metric
-        self.model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=[f1_score])
+        self.model.compile(loss='categorical_crossentropy',
+                           optimizer='adam', metrics=[f1_score])
 
         # Calculate class weights
         class_weights = compute_class_weight(
@@ -171,7 +177,8 @@ class TF_NN_Model(BaseModel):
         )
         class_weights_dict = dict(enumerate(class_weights))
 
-        f1_score_callback = F1ScoreThresholdCallback(f1_threshold=0.9, loss_threshold=0.1, validation_data=(self.X_test_scaled, y_test_categorical))
+        f1_score_callback = F1ScoreThresholdCallback(
+            f1_threshold=0.9, loss_threshold=0.1, validation_data=(self.X_test_scaled, y_test_categorical))
 
         # Then pass these weights to the 'fit' method
         self.model.fit(
@@ -185,8 +192,6 @@ class TF_NN_Model(BaseModel):
         # # Train the model
         # self.model.fit(self.X_train_scaled, y_train_categorical, epochs=50, batch_size=10)
 
-
-
     def predict(self):
         print("CHECK TF_NN")
         predicted_probs = self.model.predict(self.X_test_scaled)
@@ -195,15 +200,15 @@ class TF_NN_Model(BaseModel):
         predicted_labels = np.argmax(predicted_probs, axis=1)
 
         # Assuming label_encoder was used to encode y_train
-        self.predicted_categories = self.label_encoder.inverse_transform(predicted_labels)
+        self.predicted_categories = self.label_encoder.inverse_transform(
+            predicted_labels)
         print("CHECK predicted_labels: ", self.predicted_categories)
         return self.predicted_categories
 
     def evaluate(self):
         # Implement evaluation logic
         # Assuming y_test is your true labels and predicted_labels is your model's predictions
-        print("Confusion Matrix:\n", confusion_matrix(self.y_test, self.predicted_categories))
-        print("\nClassification Report:\n", classification_report(self.y_test, self.predicted_categories, target_names=['Buy', 'Hold', 'Sell']))
-
-
-
+        print("Confusion Matrix:\n", confusion_matrix(
+            self.y_test, self.predicted_categories))
+        print("\nClassification Report:\n", classification_report(
+            self.y_test, self.predicted_categories, target_names=['Buy', 'Hold', 'Sell']))

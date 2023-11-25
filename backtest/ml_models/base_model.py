@@ -6,6 +6,7 @@ from sklearn.preprocessing import StandardScaler
 from pykalman import KalmanFilter
 from hurst import compute_Hc
 
+
 class BaseModel:
     def __init__(self, file_path):
         self.file_path = file_path
@@ -32,14 +33,13 @@ class BaseModel:
 
         self.predicted_categories = None
 
-
     def load_preprocess_data(self):
         self.data = pd.read_csv(self.file_path)
         self.perform_fourier_transform_analysis()
         self.calculate_stochastic_oscillator()
         self.construct_kalman_filter()
         self.detect_peaks_and_troughs()
-        
+
         self.calculate_moving_averages_and_rsi()
         self.estimate_hurst_exponent()
         self.calculate_days_since_peaks_and_troughs()
@@ -56,7 +56,8 @@ class BaseModel:
         positive_frequencies = fft_freq[:N//2]
         positive_fft_values = 2.0/N * np.abs(close_fft[0:N//2])
         amplitude_threshold = 0.1  # This can be adjusted
-        significant_peaks, _ = find_peaks(positive_fft_values, height=amplitude_threshold)
+        significant_peaks, _ = find_peaks(
+            positive_fft_values, height=amplitude_threshold)
         significant_frequencies = positive_frequencies[significant_peaks]
         significant_amplitudes = positive_fft_values[significant_peaks]
         days_per_cycle = 1 / significant_frequencies
@@ -65,7 +66,6 @@ class BaseModel:
             'Amplitude': significant_amplitudes,
             'DaysPerCycle': days_per_cycle
         })
-
 
     def calculate_stochastic_oscillator(self, k_window=14, d_window=3):
         """
@@ -81,10 +81,11 @@ class BaseModel:
         The result is two time series: %K and %D
         """
         # Calculate %K
-        low_min  = self.data['Low'].rolling(window=k_window).min()
+        low_min = self.data['Low'].rolling(window=k_window).min()
         high_max = self.data['High'].rolling(window=k_window).max()
-        self.data['%K'] = 100 * (self.data['Close'] - low_min) / (high_max - low_min)
-        
+        self.data['%K'] = 100 * \
+            (self.data['Close'] - low_min) / (high_max - low_min)
+
         # Calculate %D as the moving average of %K
         self.data['%D'] = self.data['%K'].rolling(window=d_window).mean()
 
@@ -94,27 +95,30 @@ class BaseModel:
 
     def detect_fourier_signals(self):
         # Add in fourier transform
-        dominant_period_lengths = sorted(set((self.fft_features.loc[:10,'DaysPerCycle'].values/2).astype(int)), reverse=True)[:5]
+        dominant_period_lengths = sorted(set(
+            (self.fft_features.loc[:10, 'DaysPerCycle'].values/2).astype(int)), reverse=True)[:5]
         print("check dominant_period_lengths: ", dominant_period_lengths)
-        self.data['FourierSignalSell'] = self.data['DaysSinceTrough'].isin(dominant_period_lengths)
-        self.data['FourierSignalBuy'] = self.data['DaysSincePeak'].isin(dominant_period_lengths)
+        self.data['FourierSignalSell'] = self.data['DaysSinceTrough'].isin(
+            dominant_period_lengths)
+        self.data['FourierSignalBuy'] = self.data['DaysSincePeak'].isin(
+            dominant_period_lengths)
         # self.data.at[index, 'DaysSincePeak'] = days_since_peak
         # self.data.at[index, 'DaysSinceTrough'] = days_since_bottom
         print("FourierSignalSell: ", self.data['FourierSignalSell'])
         print("FourierSignalBuy: ", self.data['FourierSignalBuy'])
 
-
     def detect_peaks_and_troughs(self):
         # Peak and Trough Detection for Labeling
         close_prices = self.data['Close'].to_numpy()
-        peaks, _     = find_peaks(close_prices)
-        troughs, _   = find_peaks(-1 * close_prices)
-        mid_trend    = [i for i in range(len(close_prices))]
+        peaks, _ = find_peaks(close_prices)
+        troughs, _ = find_peaks(-1 * close_prices)
+        mid_trend = [i for i in range(len(close_prices))]
         for peak in peaks:
             mid_trend.remove(peak)
         for trough in troughs:
             mid_trend.remove(trough)
-        labels = pd.DataFrame(index=range(len(close_prices)), columns=['Label'])
+        labels = pd.DataFrame(index=range(
+            len(close_prices)), columns=['Label'])
         labels.loc[peaks, 'Label'] = 'Sell'
         labels.loc[troughs, 'Label'] = 'Buy'
         labels.loc[mid_trend, 'Label'] = 'Hold'
@@ -135,8 +139,10 @@ class BaseModel:
         short_window = 5
         long_window = 20
         rsi_period = 14
-        self.data['Short_Moving_Avg'] = self.data['Close'].rolling(window=short_window).mean()
-        self.data['Long_Moving_Avg'] = self.data['Close'].rolling(window=long_window).mean()
+        self.data['Short_Moving_Avg'] = self.data['Close'].rolling(
+            window=short_window).mean()
+        self.data['Long_Moving_Avg'] = self.data['Close'].rolling(
+            window=long_window).mean()
         self.data['RSI'] = self.calculate_rsi(window=rsi_period)
 
     def construct_kalman_filter(self):
@@ -148,7 +154,8 @@ class BaseModel:
         state_means, _ = kf.filter(close_prices.values)
 
         # Convert state means to a Pandas Series for easy plotting
-        kalman_estimates = pd.Series(state_means.flatten(), index=self.data.index)
+        kalman_estimates = pd.Series(
+            state_means.flatten(), index=self.data.index)
 
         # Combine the original close prices and Kalman Filter estimates
         kalman_estimates = pd.DataFrame({
@@ -162,7 +169,7 @@ class BaseModel:
     def estimate_hurst_exponent(self, window_size=100, step_size=1):
         """
         Calculates the Hurst exponent over sliding windows and appends the results to the DataFrame.
-        
+
         :param window_size: Size of each sliding window.
         :param step_size: Step size for moving the window.
         """
@@ -172,19 +179,19 @@ class BaseModel:
         for i in range(0, len(self.data) - window_size + 1, step_size):
             # Extract the window
             window = self.data['Close'].iloc[i:i + window_size]
-            
+
             # Calculate the Hurst exponent
             H, _, _ = compute_Hc(window, kind='price', simplified=True)
-            
+
             # Store the result along with the starting date of the window
-            hurst_exponents.append({'Date': self.data['Date'].iloc[i], 'HurstExponent': H})
+            hurst_exponents.append(
+                {'Date': self.data['Date'].iloc[i], 'HurstExponent': H})
 
         # Convert the results list into a DataFrame
         hurst_exponents = pd.DataFrame(hurst_exponents)
 
         # Combine the original DataFrame and Hurst exponent estimates
         self.data = self.data.merge(hurst_exponents, on='Date', how='left')
-
 
     def calculate_days_since_peaks_and_troughs(self):
         self.data['DaysSincePeak'] = 0
@@ -210,8 +217,10 @@ class BaseModel:
                 checkpoint_date_top = today_date
                 checkpoint_price_top = current_price
 
-            days_since_bottom = (today_date - checkpoint_date_bottom).days if checkpoint_date_bottom else 0
-            days_since_peak = (today_date - checkpoint_date_top).days if checkpoint_date_top else 0
+            days_since_bottom = (
+                today_date - checkpoint_date_bottom).days if checkpoint_date_bottom else 0
+            days_since_peak = (
+                today_date - checkpoint_date_top).days if checkpoint_date_top else 0
 
             if checkpoint_price_bottom is not None:
                 price_change_since_bottom = current_price - checkpoint_price_bottom
@@ -223,8 +232,10 @@ class BaseModel:
             self.data.at[index, 'DaysSinceTrough'] = days_since_bottom
             # self.data.at[index, 'FourierSignalSell'] = ( (days_since_peak % 6 == 0) or (days_since_peak % 7 == 0) )
             # self.data.at[index, 'FourierSignalBuy'] = ( (days_since_bottom % 6 == 0) or (days_since_bottom % 7 == 0) )
-            self.data.at[index, 'PriceChangeSincePeak'] = price_change_since_peak
-            self.data.at[index, 'PriceChangeSinceTrough'] = price_change_since_bottom
+            self.data.at[index,
+                         'PriceChangeSincePeak'] = price_change_since_peak
+            self.data.at[index,
+                         'PriceChangeSinceTrough'] = price_change_since_bottom
 
     def preprocess_data(self):
         self.data.dropna(inplace=True)
@@ -232,48 +243,41 @@ class BaseModel:
     def train_test_split_time_series(self, test_size=0.4):
         # Convert 'Date' column to datetime if it's not already
         self.data['Date'] = pd.to_datetime(self.data['Date'])
-        
+
         # Sort the data by date to ensure correct time sequence
         self.data.sort_values('Date', inplace=True)
-        
+
         # Find the split point
         self.split_idx = int(len(self.data) * (1 - test_size))
         self.data.to_csv('final_dataset_with_new_features.csv')
         # Split the data without shuffling
 
-        # self.X_train = self.data[['Short_Moving_Avg', 'Long_Moving_Avg', 'RSI', 'DaysSincePeak', 'DaysSinceTrough', 'FourierSignalSell', 'FourierSignalBuy', 'PriceChangeSincePeak', 'PriceChangeSinceTrough', '%K', '%D', 'KalmanFilterEst']].iloc[:self.split_idx]
-        # self.X_test = self.data[['Short_Moving_Avg', 'Long_Moving_Avg', 'RSI', 'DaysSincePeak', 'DaysSinceTrough', 'FourierSignalSell', 'FourierSignalBuy', 'PriceChangeSincePeak', 'PriceChangeSinceTrough', '%K', '%D', 'KalmanFilterEst']].iloc[self.split_idx:]
-        # self.X_train = self.data[['Short_Moving_Avg', 'Long_Moving_Avg', 'RSI', 'DaysSincePeak', 'DaysSinceTrough']].iloc[:self.split_idx]
-        # self.X_test = self.data[['Short_Moving_Avg', 'Long_Moving_Avg', 'RSI', 'DaysSincePeak', 'DaysSinceTrough']].iloc[self.split_idx:]
-
-        # self.X_train = self.data[['Short_Moving_Avg', 'Long_Moving_Avg', 'RSI', 'DaysSincePeak', 'DaysSinceTrough', 'PriceChangeSincePeak', 'PriceChangeSinceTrough']].iloc[:self.split_idx]
-        # self.X_test = self.data[['Short_Moving_Avg', 'Long_Moving_Avg', 'RSI', 'DaysSincePeak', 'DaysSinceTrough', 'PriceChangeSincePeak', 'PriceChangeSinceTrough']].iloc[self.split_idx:]
         self.X_train = self.data[
-            ['Short_Moving_Avg', 
-            'Long_Moving_Avg', 
-            'RSI', 
-            'DaysSincePeak', 
-            'DaysSinceTrough', 
-            'FourierSignalSell', 
-            'FourierSignalBuy', 
-            '%K', 
-            '%D', 
-            'KalmanFilterEst', 
-            'HurstExponent']
-            ].iloc[:self.split_idx]
+            ['Short_Moving_Avg',
+             'Long_Moving_Avg',
+             'RSI',
+             'DaysSincePeak',
+             'DaysSinceTrough',
+             'FourierSignalSell',
+             'FourierSignalBuy',
+             '%K',
+             '%D',
+             'KalmanFilterEst',
+             'HurstExponent']
+        ].iloc[:self.split_idx]
         self.X_test = self.data[
-            ['Short_Moving_Avg', 
-            'Long_Moving_Avg', 
-            'RSI', 
-            'DaysSincePeak', 
-            'DaysSinceTrough', 
-            'FourierSignalSell', 
-            'FourierSignalBuy', 
-            '%K', 
-            '%D', 
-            'KalmanFilterEst', 
-            'HurstExponent']
-            ].iloc[self.split_idx:]
+            ['Short_Moving_Avg',
+             'Long_Moving_Avg',
+             'RSI',
+             'DaysSincePeak',
+             'DaysSinceTrough',
+             'FourierSignalSell',
+             'FourierSignalBuy',
+             '%K',
+             '%D',
+             'KalmanFilterEst',
+             'HurstExponent']
+        ].iloc[self.split_idx:]
 
         self.y_train = self.data['Label'].iloc[:self.split_idx]
         self.y_test = self.data['Label'].iloc[self.split_idx:]
@@ -297,5 +301,3 @@ class BaseModel:
     def evaluate(self, X, y):
         # Implement evaluation logic
         pass
-
-

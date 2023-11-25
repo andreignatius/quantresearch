@@ -35,6 +35,7 @@ import random
 from ml_models.tf_nn_model import TF_NN_Model
 # Load the Forex data
 file_path = 'data/USD_JPY.csv'
+# file_path = 'data/USD_JPY_bbg.csv'
 model = TF_NN_Model(file_path)
 
 model.load_preprocess_data()

@@ -248,8 +248,32 @@ class BaseModel:
 
         # self.X_train = self.data[['Short_Moving_Avg', 'Long_Moving_Avg', 'RSI', 'DaysSincePeak', 'DaysSinceTrough', 'PriceChangeSincePeak', 'PriceChangeSinceTrough']].iloc[:self.split_idx]
         # self.X_test = self.data[['Short_Moving_Avg', 'Long_Moving_Avg', 'RSI', 'DaysSincePeak', 'DaysSinceTrough', 'PriceChangeSincePeak', 'PriceChangeSinceTrough']].iloc[self.split_idx:]
-        self.X_train = self.data[['Short_Moving_Avg', 'Long_Moving_Avg', 'RSI', 'DaysSincePeak', 'DaysSinceTrough', 'FourierSignalSell', 'FourierSignalBuy', '%K', '%D', 'KalmanFilterEst', 'HurstExponent']].iloc[:self.split_idx]
-        self.X_test = self.data[['Short_Moving_Avg', 'Long_Moving_Avg', 'RSI', 'DaysSincePeak', 'DaysSinceTrough', 'FourierSignalSell', 'FourierSignalBuy', '%K', '%D', 'KalmanFilterEst', 'HurstExponent']].iloc[self.split_idx:]
+        self.X_train = self.data[
+            ['Short_Moving_Avg', 
+            'Long_Moving_Avg', 
+            'RSI', 
+            'DaysSincePeak', 
+            'DaysSinceTrough', 
+            'FourierSignalSell', 
+            'FourierSignalBuy', 
+            '%K', 
+            '%D', 
+            'KalmanFilterEst', 
+            'HurstExponent']
+            ].iloc[:self.split_idx]
+        self.X_test = self.data[
+            ['Short_Moving_Avg', 
+            'Long_Moving_Avg', 
+            'RSI', 
+            'DaysSincePeak', 
+            'DaysSinceTrough', 
+            'FourierSignalSell', 
+            'FourierSignalBuy', 
+            '%K', 
+            '%D', 
+            'KalmanFilterEst', 
+            'HurstExponent']
+            ].iloc[self.split_idx:]
 
         self.y_train = self.data['Label'].iloc[:self.split_idx]
         self.y_test = self.data['Label'].iloc[self.split_idx:]

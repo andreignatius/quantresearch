@@ -177,7 +177,7 @@ class TF_NN_Model(BaseModel):
         self.model.fit(
             self.X_train_scaled,
             y_train_categorical,
-            epochs=70,
+            epochs=100,
             batch_size=10,
             class_weight=class_weights_dict,
             callbacks=[f1_score_callback]

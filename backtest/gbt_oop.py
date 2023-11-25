@@ -15,6 +15,7 @@ from ml_models.gbt_model import GBTModel
 
 # Load the Forex data
 file_path = 'data/USD_JPY.csv'
+# file_path = 'data/USD_JPY_bbg.csv'
 model = GBTModel(file_path)
 
 model.load_preprocess_data()
@@ -89,13 +90,13 @@ for index, (row, prediction) in enumerate(zip(data.iterrows(), predicted_categor
     # print("row[1]: ", row[1])
     current_price = row[1]['Open']
 
-    if shares > 0:
-        change_percentage = (current_price - buy_price) / buy_price
-        if change_percentage <= -stop_loss_threshold:
-            cash += shares * current_price
-            trade_log.append(f"Sell {shares} shares at {current_price} on {row['Date']} (Stop-loss triggered)")
-            shares = 0
-            continue
+    # if shares > 0:
+    #     change_percentage = (current_price - buy_price) / buy_price
+    #     if change_percentage <= -stop_loss_threshold:
+    #         cash += shares * current_price
+    #         trade_log.append(f"Sell {shares} shares at {current_price} on {row['Date']} (Stop-loss triggered)")
+    #         shares = 0
+    #         continue
 
     if prediction == 'Buy' and cash >= trading_lot and ( buy_price is None or (buy_price is not None and ( current_price < buy_price * 0.99 or current_price > buy_price * 1.01) ) ):
         print("current_price: ", current_price)

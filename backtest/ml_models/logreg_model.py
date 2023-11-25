@@ -10,19 +10,11 @@ from sklearn.metrics import classification_report, confusion_matrix
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import roc_curve, auc
 from sklearn.model_selection import cross_val_score
-from imblearn.over_sampling import SMOTE
 
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense
 from tensorflow.keras.utils import to_categorical
 
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-from torch.utils.data import DataLoader, TensorDataset
-from torch.utils.data.sampler import WeightedRandomSampler
-
-from imblearn.over_sampling import SMOTE
 from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.utils.class_weight import compute_class_weight
 

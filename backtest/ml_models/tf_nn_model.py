@@ -11,7 +11,6 @@ from sklearn.metrics import accuracy_score
 from sklearn.metrics import roc_curve, auc
 from sklearn.metrics import f1_score as sklearn_f1_score
 from sklearn.model_selection import cross_val_score
-from imblearn.over_sampling import SMOTE
 
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import LSTM, Dense, Dropout, Conv1D, MaxPooling1D, Flatten
@@ -19,13 +18,6 @@ from tensorflow.keras.utils import to_categorical
 from tensorflow.keras.callbacks import Callback
 from keras import backend as K
 
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-from torch.utils.data import DataLoader, TensorDataset
-from torch.utils.data.sampler import WeightedRandomSampler
-
-from imblearn.over_sampling import SMOTE
 from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.utils.class_weight import compute_class_weight
 

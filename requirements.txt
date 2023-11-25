@@ -1,0 +1,7 @@
+tensorflow-macos
+tensorflow-metal
+tensorflow-datasets
+pandas
+numpy
+matplotlib
+scikit-learn

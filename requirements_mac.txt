@@ -7,3 +7,4 @@ matplotlib
 scikit-learn
 pykalman
 hurst
+TA-lib

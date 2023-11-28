@@ -24,8 +24,8 @@ import random
 from .base_model import BaseModel
 
 class GBTModel(BaseModel):
-    def __init__(self, file_path):
-        super().__init__(file_path)
+    def __init__(self, file_path, train_start, train_end, test_start, test_end):
+        super().__init__(file_path, train_start, train_end, test_start, test_end)
         self.model = GradientBoostingClassifier()
 
     def train(self):

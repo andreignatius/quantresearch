@@ -8,10 +8,16 @@ from hurst import compute_Hc
 
 
 class BaseModel:
-    def __init__(self, file_path):
+    def __init__(self, file_path, train_start, train_end, test_start, test_end):
         self.file_path = file_path
         # self.model_type = model_type
         self.data = None
+
+        self.train_start = train_start
+        self.train_end = train_end
+        self.test_start = test_start
+        self.test_end = test_end
+
         self.X = None
         self.y = None
         self.X_train = None
@@ -244,6 +250,11 @@ class BaseModel:
         # Convert 'Date' column to datetime if it's not already
         self.data['Date'] = pd.to_datetime(self.data['Date'])
 
+        # # Filter the data for training and testing periods
+        # train_data = self.data[(self.data['Date'] >= self.train_start) & (self.data['Date'] < self.train_end)]
+        # test_data = self.data[(self.data['Date'] >= self.test_start) & (self.data['Date'] < self.test_end)]
+
+
         # Sort the data by date to ensure correct time sequence
         self.data.sort_values('Date', inplace=True)
 
@@ -252,35 +263,44 @@ class BaseModel:
         self.data.to_csv('final_dataset_with_new_features.csv')
         # Split the data without shuffling
 
-        self.X_train = self.data[
-            ['Short_Moving_Avg',
-             'Long_Moving_Avg',
-             'RSI',
-             'DaysSincePeak',
-             'DaysSinceTrough',
-             'FourierSignalSell',
-             'FourierSignalBuy',
-             '%K',
-             '%D',
-             'KalmanFilterEst',
-             'HurstExponent']
-        ].iloc[:self.split_idx]
-        self.X_test = self.data[
-            ['Short_Moving_Avg',
-             'Long_Moving_Avg',
-             'RSI',
-             'DaysSincePeak',
-             'DaysSinceTrough',
-             'FourierSignalSell',
-             'FourierSignalBuy',
-             '%K',
-             '%D',
-             'KalmanFilterEst',
-             'HurstExponent']
-        ].iloc[self.split_idx:]
+        # Filter the data for training and testing periods
+        self.train_data = self.data[(self.data['Date'] >= self.train_start) & (self.data['Date'] < self.train_end)]
+        self.test_data  = self.data[(self.data['Date'] >= self.test_start) & (self.data['Date'] < self.test_end)]
 
-        self.y_train = self.data['Label'].iloc[:self.split_idx]
-        self.y_test = self.data['Label'].iloc[self.split_idx:]
+        self.X_train = self.train_data[
+            ['Short_Moving_Avg',
+             'Long_Moving_Avg',
+             'RSI',
+             'DaysSincePeak',
+             'DaysSinceTrough',
+             'FourierSignalSell',
+             'FourierSignalBuy',
+             '%K',
+             '%D',
+             'KalmanFilterEst',
+             'HurstExponent']
+        ]
+        
+        # ].iloc[:self.split_idx]
+        self.X_test = self.test_data[
+            ['Short_Moving_Avg',
+             'Long_Moving_Avg',
+             'RSI',
+             'DaysSincePeak',
+             'DaysSinceTrough',
+             'FourierSignalSell',
+             'FourierSignalBuy',
+             '%K',
+             '%D',
+             'KalmanFilterEst',
+             'HurstExponent']
+        ]
+        # ].iloc[self.split_idx:]
+
+        # self.y_train = self.data['Label'].iloc[:self.split_idx]
+        # self.y_test = self.data['Label'].iloc[self.split_idx:]
+        self.y_train = self.train_data['Label']
+        self.y_test = self.test_data['Label']
 
         print("len X train: ", len(self.X_train))
         print("len X test: ", len(self.X_test))
@@ -288,7 +308,11 @@ class BaseModel:
         print("len y test: ", len(self.y_test))
 
     def retrieve_test_set(self):
-        return self.data[self.split_idx:]
+        # return self.data[self.split_idx:]
+        # dates = self.test_data[['Date']]
+        # print("dates111: ", dates)
+        # return self.X_test.join( dates )
+        return self.test_data
 
     def train(self):
         # Implement or leave empty to override in derived classes

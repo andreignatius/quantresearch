@@ -88,8 +88,8 @@ class F1ScoreThresholdCallback(Callback):
 
 
 class TF_NN_Model(BaseModel):
-    def __init__(self, file_path):
-        super().__init__(file_path)
+    def __init__(self, file_path, train_start, train_end, test_start, test_end):
+        super().__init__(file_path, train_start, train_end, test_start, test_end)
         self.model = Sequential()
         self.label_encoder = LabelEncoder()
 

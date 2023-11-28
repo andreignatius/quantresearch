@@ -78,10 +78,8 @@ def calculate_dpo_5(df):
 def calculate_donchian_channel(df, window=20):
     high = df['High']
     low = df['Low']
-    
     df['DC_High'] = high.rolling(window=window).max()
     df['DC_Low'] = low.rolling(window=window).min()
-    
     return df
 
 # Ease of Movement
@@ -89,13 +87,10 @@ def calculate_ease_of_movement(df):
     high = df['High']
     low = df['Low']
     volume = df['Volume']
-    
     distance_moved = ((high + low) / 2) - ((high.shift() + low.shift()) / 2)
     box_ratio = volume / (high - low)
     ease_of_movement = distance_moved / box_ratio
-    
     df['EoM'] = ease_of_movement
-    
     return df
 
 # Exponential Moving Average
@@ -171,7 +166,7 @@ def calculate_momentum(df, period=14):
     df['Momentum'] = df['Close'].diff(period)
     return df
 
-# Money Flow Index
+# Money Flow Index (MFI)
 def calculate_mfi(df, period=14):
     df['MFI'] = talib.MFI(df['High'], df['Low'], df['Close'], df['Volume'], timeperiod=period)
     return df
@@ -286,3 +281,5 @@ forex_data = calculate_weighted_moving_average(forex_data)
 pd.set_option('display.max_columns', None)
 print(forex_data.head())
 print(forex_data.tail())
+
+

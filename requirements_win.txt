@@ -6,3 +6,4 @@ scikit-learn
 pykalman
 hurst
 TA-lib
+yfinance

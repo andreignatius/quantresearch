@@ -1,7 +1,7 @@
-import os
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
 import numpy as np
+from scipy.stats import spearmanr
 
 # Load data
 file_path_JPYTBill = 'backtest/data/JPY_1Y_TBill_GJTB12MO.csv'
@@ -28,10 +28,13 @@ M2_JP = pd.read_excel(file_path_M2_JP, parse_dates= True)
 M2_US = pd.read_excel(file_path_M2_US, parse_dates= True)
 forex_data = pd.read_csv(file_path, parse_dates= True)
 
+scaler = StandardScaler()
+
 # get TBill data
 TBill_data = TBill_data_US.merge(TBill_data_JP, on = 'Date')
 TBill_data['Interest_Rate_Difference'] = TBill_data['PX_LAST_y'] - TBill_data['PX_LAST_x']
-TBill_data = TBill_data[['Date','Interest_Rate_Difference']]
+TBill_data['Interest_Rate_Difference_Change'] = TBill_data['Interest_Rate_Difference'].diff()
+TBill_data = TBill_data[['Date','Interest_Rate_Difference_Change']]
 TBill_data['Date'] = pd.to_datetime(TBill_data['Date'])
 
 # get CPI data
@@ -42,11 +45,12 @@ CPI_data = CPI_data.set_index('Date')
 # Linear Interpolate the data
 CPI_data = CPI_data.resample('D').interpolate()
 CPI_data['CPI_Difference'] = CPI_data['CPI_Difference'].interpolate()
+CPI_data['CPI_Difference_Change'] = CPI_data['CPI_Difference'].diff()
+CPI_data = CPI_data.drop(columns = 'CPI_Difference')
 CPI_data = CPI_data.reset_index()
 
 # get Currency Account data
 CurrencyAccount_data = CurrencyAccount_US.merge(CurrencyAccount_JP, on ='Date')
-scaler = StandardScaler()
 CurrencyAccount_Date = CurrencyAccount_data['Date'].values
 CurrencyAccount_data = CurrencyAccount_data.set_index('Date')
 CurrencyAccount_data = CurrencyAccount_data[['PX_LAST_x', 'PX_LAST_y']]
@@ -68,6 +72,8 @@ FDI_data = FDI_data.set_index('Date')
 # Linear Interpolation
 FDI_data = FDI_data.resample('D').interpolate()
 FDI_data['FDI_Difference'] = FDI_data['FDI_Difference'].interpolate()
+FDI_data['FDI_Difference_Change'] = FDI_data['FDI_Difference'].diff()
+FDI_data = FDI_data.drop(columns = 'FDI_Difference')
 FDI_data = FDI_data.reset_index()
 
 # get M2
@@ -78,6 +84,8 @@ M2_data = M2_data.set_index('Date')
 # Linear Interpolation
 M2_data = M2_data.resample('D').interpolate()
 M2_data['M2_Difference'] = M2_data['M2_Difference'].interpolate()
+M2_data['M2_Difference_Change'] = M2_data['M2_Difference'].diff()
+M2_data = M2_data.drop(columns = 'M2_Difference')
 M2_data = M2_data.reset_index()
 
 
@@ -88,4 +96,21 @@ forex_data = forex_data.merge(TBill_data, on = 'Date')
 forex_data = forex_data.merge(CurrencyAccount_data, on = 'Date')
 forex_data = forex_data.merge(FDI_data, on = 'Date')
 forex_data = forex_data.merge(M2_data, on= 'Date')
-print(forex_data)
+
+# Check correlation
+forex_data['Signal'] = np.where(forex_data['Label'] == 'Buy', 1, 0)
+forex_data['Signal'] = np.where(forex_data['Label'] == 'Sell', -1, forex_data['Signal'])
+Correlation_Checking = forex_data[['CPI_Difference_Change',
+       'Interest_Rate_Difference_Change', 'Currency_Account_difference',
+       'FDI_Difference_Change', 'M2_Difference_Change', 'Signal']]
+# Normal Correlation
+Correlation = Correlation_Checking.corr()
+# Spearman Correlation
+Correlation_coef_spearman, p_value = spearmanr(Correlation_Checking.iloc[:,:-1], Correlation_Checking['Signal'])
+
+# Drop Currency Account Difference Feature as the correlation and Spearman Correlation with Signal is low
+forex_data = forex_data.drop(columns= ['Currency_Account_difference', 'Signal'])
+
+print(forex_data.columns)
+print(Correlation, Correlation_coef_spearman)
+

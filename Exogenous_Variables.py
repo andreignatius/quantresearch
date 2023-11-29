@@ -16,8 +16,8 @@ file_path_FDI_US = 'backtest/data/USA_FDI.xlsx'
 file_path_M2_JP = 'backtest/data/Japan_Monetary_Supply.xlsx'
 file_path_M2_US = 'backtest/data/US_Monetary_Supply.xlsx'
 
-TBill_data_JP = pd.read_csv(file_path_JPYTBill, parse_dates = True)
-TBill_data_US = pd.read_csv(file_path_USTBill, parse_dates = True)
+TBill_data_JP = pd.read_csv(file_path_JPYTBill)
+TBill_data_US = pd.read_csv(file_path_USTBill)
 CPI_data_JP = pd.read_excel(file_path_JPYCPI, parse_dates = True)
 CPI_data_US = pd.read_excel(file_path_USCPI, parse_dates = True)
 CurrencyAccount_JP = pd.read_excel(file_path_CurrencyAccount_JP, parse_dates= True)
@@ -35,7 +35,7 @@ TBill_data = TBill_data_US.merge(TBill_data_JP, on = 'Date')
 TBill_data['Interest_Rate_Difference'] = TBill_data['PX_LAST_y'] - TBill_data['PX_LAST_x']
 TBill_data['Interest_Rate_Difference_Change'] = TBill_data['Interest_Rate_Difference'].diff()
 TBill_data = TBill_data[['Date','Interest_Rate_Difference_Change']]
-TBill_data['Date'] = pd.to_datetime(TBill_data['Date'])
+TBill_data['Date'] = pd.to_datetime(TBill_data['Date'], dayfirst= True)
 
 # get CPI data
 CPI_data = CPI_data_US.merge(CPI_data_JP, on = 'Date')

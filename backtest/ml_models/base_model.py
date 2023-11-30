@@ -246,7 +246,8 @@ class BaseModel:
     def preprocess_data(self):
         self.data.dropna(inplace=True)
 
-    def train_test_split_time_series(self, test_size=0.4):
+    # def train_test_split_time_series(self, test_size=0.4):
+    def train_test_split_time_series(self):
         # Convert 'Date' column to datetime if it's not already
         self.data['Date'] = pd.to_datetime(self.data['Date'])
 
@@ -259,7 +260,7 @@ class BaseModel:
         self.data.sort_values('Date', inplace=True)
 
         # Find the split point
-        self.split_idx = int(len(self.data) * (1 - test_size))
+        # self.split_idx = int(len(self.data) * (1 - test_size))
         self.data.to_csv('final_dataset_with_new_features.csv')
         # Split the data without shuffling
 

@@ -2,7 +2,7 @@
 Input feature: technical indicators
 Period: 200 days
 Target label: peaks and troughs
-predict the trend of the SGD/CNY
+predict the trend of the USD/JPY
 """
 
 import numpy as np
@@ -37,7 +37,7 @@ from sklearn.metrics import classification_report
 import warnings
 warnings.filterwarnings("ignore")
 
-y_ticker = "SGDCNY=X"
+y_ticker = "USDJPY=X"
 end = dt.datetime.now()
 start = end - dt.timedelta(days = 300)
 LAG = 5
@@ -329,7 +329,7 @@ def calculate_strategy_return(signals, capital, commission):
     print(f"    CAGR:                    {FX_CAGR}")
     print(f"    Max drawdown:            {FX_max_drawdown}")
     print(f"    Longest drawdown period: {FX_longest_drawdown_period} days")
-    print(f"    Finanl account:          {FX_final_account}")
+    print(f"    Final account:           {FX_final_account}")
 
     print("================================================================")
     print("================================================================")
@@ -340,7 +340,7 @@ def calculate_strategy_return(signals, capital, commission):
     print(f"    CAGR:                    {CAGR}")
     print(f"    Max drawdown:            {max_drawdown}")
     print(f"    Longest drawdown period: {longest_drawdown_period} days")
-    print(f"    Finanl account:          {strategy_final_account}")
+    print(f"    Final account:           {strategy_final_account}")
     return portfolio
 
 

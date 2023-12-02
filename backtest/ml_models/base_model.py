@@ -5,6 +5,7 @@ from scipy.signal import find_peaks
 from sklearn.preprocessing import StandardScaler
 from pykalman import KalmanFilter
 from hurst import compute_Hc
+from sklearn.utils import resample
 
 
 class BaseModel:
@@ -264,12 +265,34 @@ class BaseModel:
         self.data.to_csv('final_dataset_with_new_features.csv')
         # Split the data without shuffling
 
-        # Filter the data for training and testing periods
-        self.train_data = self.data[(self.data['Date'] >= self.train_start) & (self.data['Date'] < self.train_end)]
-        self.test_data  = self.data[(self.data['Date'] >= self.test_start) & (self.data['Date'] < self.test_end)]
+        # # Filter the data for training and testing periods
+        # self.train_data = self.data[(self.data['Date'] >= self.train_start) & (self.data['Date'] < self.train_end)]
+        # self.test_data  = self.data[(self.data['Date'] >= self.test_start) & (self.data['Date'] < self.test_end)]
+        # Filter the data for training and testing periods and create copies
+        self.train_data = self.data[(self.data['Date'] >= self.train_start) & (self.data['Date'] < self.train_end)].copy()
+        self.test_data = self.data[(self.data['Date'] >= self.test_start) & (self.data['Date'] < self.test_end)].copy()
+
+
+        # Calculate the age of each data point in days
+        current_date = self.train_end
+        self.train_data['DataAge'] = (current_date - self.train_data['Date']).dt.days
+
+        # Apply exponential decay to calculate weights
+        decay_rate = 0.05  # This is a parameter you can tune
+        self.train_data['Weight'] = np.exp(-decay_rate * self.train_data['DataAge'])
+
+        # Now sample from your data with these weights
+        # self.train_data = resample(self.train_data, n_samples=1000, replace=False, weights='Weight')
+        # self.train_data = self.train_data.sample(n=1000, replace=False, weights=self.train_data['Weight'])
+
+        sample_size = min(len(self.train_data), 1000)
+        self.train_data = self.train_data.sample(n=sample_size, replace=False, weights=self.train_data['Weight'])
+        self.train_data.sort_values('Date', inplace=True)
+        self.train_data.to_csv('inspect_training_set.csv')
 
         self.X_train = self.train_data[
-            ['Short_Moving_Avg',
+            [
+             'Short_Moving_Avg',
              'Long_Moving_Avg',
              'RSI',
              'DaysSincePeak',
@@ -279,12 +302,14 @@ class BaseModel:
              '%K',
              '%D',
              'KalmanFilterEst',
-             'HurstExponent']
+             'HurstExponent'
+            ]
         ]
         
         # ].iloc[:self.split_idx]
         self.X_test = self.test_data[
-            ['Short_Moving_Avg',
+            [
+             'Short_Moving_Avg',
              'Long_Moving_Avg',
              'RSI',
              'DaysSincePeak',
@@ -294,7 +319,8 @@ class BaseModel:
              '%K',
              '%D',
              'KalmanFilterEst',
-             'HurstExponent']
+             'HurstExponent'
+            ]
         ]
         # ].iloc[self.split_idx:]
 

@@ -42,6 +42,8 @@ class BaseModel:
 
     def load_preprocess_data(self):
         self.data = pd.read_csv(self.file_path)
+        self.data['Date'] = pd.to_datetime(self.data['Date'])
+
         self.perform_fourier_transform_analysis()
         self.calculate_stochastic_oscillator()
         self.construct_kalman_filter()
@@ -55,7 +57,18 @@ class BaseModel:
 
     def perform_fourier_transform_analysis(self):
         # Fourier Transform Analysis
-        close_prices = self.data['Close'].to_numpy()
+        # close_prices = self.data['Close'].to_numpy()
+        print("check000: ", type(self.train_end - pd.DateOffset(months=12)))
+        print("check111: ", type(self.train_end))
+        print("check222: ", self.data['Date'])
+        d1 = self.train_end - pd.DateOffset(months=12)
+        d2 = self.train_end
+
+        data_window = self.data[(self.data['Date'] >= d1) & (self.data['Date'] < d2)].copy()
+        print("data_window: ", data_window)
+
+        close_prices = data_window['Close'].to_numpy()
+        # print("close_prices: ", close_prices)
         N = len(close_prices)
         T = 1.0  # 1 day
         close_fft = fft(close_prices)
@@ -97,11 +110,13 @@ class BaseModel:
         self.data['%D'] = self.data['%K'].rolling(window=d_window).mean()
 
         # Handle any NaN values that may have been created
-        self.data['%K'].fillna(method='bfill', inplace=True)
-        self.data['%D'].fillna(method='bfill', inplace=True)
+        self.data['%K'].bfill(inplace=True)
+        self.data['%D'].bfill(inplace=True)
+
 
     def detect_fourier_signals(self):
         # Add in fourier transform
+        print("check fft_features: ", self.fft_features)
         dominant_period_lengths = sorted(set(
             (self.fft_features.loc[:10, 'DaysPerCycle'].values/2).astype(int)), reverse=True)[:5]
         print("check dominant_period_lengths: ", dominant_period_lengths)
@@ -250,7 +265,7 @@ class BaseModel:
     # def train_test_split_time_series(self, test_size=0.4):
     def train_test_split_time_series(self):
         # Convert 'Date' column to datetime if it's not already
-        self.data['Date'] = pd.to_datetime(self.data['Date'])
+        # self.data['Date'] = pd.to_datetime(self.data['Date'])
 
         # # Filter the data for training and testing periods
         # train_data = self.data[(self.data['Date'] >= self.train_start) & (self.data['Date'] < self.train_end)]
@@ -285,7 +300,7 @@ class BaseModel:
         # self.train_data = resample(self.train_data, n_samples=1000, replace=False, weights='Weight')
         # self.train_data = self.train_data.sample(n=1000, replace=False, weights=self.train_data['Weight'])
 
-        sample_size = min(len(self.train_data), 1000)
+        sample_size = min(len(self.train_data), 1500)
         self.train_data = self.train_data.sample(n=sample_size, replace=False, weights=self.train_data['Weight'])
         self.train_data.sort_values('Date', inplace=True)
         self.train_data.to_csv('inspect_training_set.csv')

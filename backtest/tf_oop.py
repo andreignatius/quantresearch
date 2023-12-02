@@ -114,8 +114,8 @@ def rolling_window_train_predict(data, start_year, end_year, train_duration, tes
         final_portfolio_values.append(final_portfolio_value)
 
         # Move to the next window
-        current_date += pd.DateOffset(months=3)
-        train_duration += 3
+        current_date += pd.DateOffset(months=6)
+        train_duration += 6
 
     return trade_logs, final_portfolio_values
 

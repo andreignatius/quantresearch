@@ -1,3 +1,4 @@
+# pip install -r requirements_win.txt
 tensorflow
 pandas
 numpy
@@ -5,5 +6,9 @@ matplotlib
 scikit-learn
 pykalman
 hurst
-TA-lib
 yfinance
+backtesting
+seaborn
+
+# ta-lib does not install with pip install ta-lib, use this instead:
+# conda install -c conda-forge ta-lib

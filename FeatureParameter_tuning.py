@@ -25,7 +25,7 @@ import talib
 import warnings
 warnings.filterwarnings("ignore")
 
-df = pd.read_csv('USD_JPY.csv',parse_dates=["Date"]).set_index("Date").drop(columns = "Volume")
+df = pd.read_csv('backtest/data/USD_JPY.csv',parse_dates=["Date"]).set_index("Date").drop(columns = "Volume")
 
 def SMA(array, n):
     return talib.SMA(array, n)

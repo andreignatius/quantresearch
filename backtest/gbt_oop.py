@@ -36,11 +36,13 @@ def rolling_window_train_predict(data, start_year, end_year, train_duration, tes
     # Sort the data by date to ensure correct time sequence
     data.sort_values('Date', inplace=True)
 
+    start_date = datetime(start_year, 1, 1)
     current_date = datetime(start_year, 1, 1)
 
     while current_date.year < end_year:
         # Define the start and end of the training period
-        train_start = current_date
+        # train_start = current_date
+        train_start = start_date
         train_end = train_start + pd.DateOffset(months=train_duration)
 
         # Define the start and end of the testing period
@@ -92,6 +94,7 @@ def rolling_window_train_predict(data, start_year, end_year, train_duration, tes
 
         # Move to the next window
         current_date += pd.DateOffset(months=3)
+        train_duration += 3
 
     return trade_logs, final_portfolio_values
 

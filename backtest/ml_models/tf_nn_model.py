@@ -43,28 +43,6 @@ def f1_score(y_true, y_pred):
     f1_val = 2 * (precision * recall) / (precision + recall + K.epsilon())
     return f1_val
 
-# class F1ScoreThresholdCallback(Callback):
-#     def __init__(self, threshold=0.9, validation_data=()):
-#         super(F1ScoreThresholdCallback, self).__init__()
-#         self.threshold = threshold
-#         self.validation_data = validation_data
-
-#     def on_epoch_end(self, epoch, logs={}):
-#         X_val, y_val = self.validation_data
-#         y_pred = self.model.predict(X_val)
-#         # Convert predictions and true values to binary format
-#         y_pred_binary = np.argmax(y_pred, axis=1)
-#         y_val_binary = np.argmax(y_val, axis=1)
-
-#         # Calculate F1 Score
-#         _f1_score = sklearn_f1_score(y_val_binary, y_pred_binary, average='macro')  # Use 'macro' or 'weighted' based on your requirement
-#         print("Epoch: {} - F1 Score: {:.4f}".format(epoch+1, _f1_score))
-
-#         # Check if F1 score threshold is met or exceeded
-#         if _f1_score > self.threshold:
-#             print("F1 Score threshold reached, stopping training.")
-#             self.model.stop_training = True
-
 
 class F1ScoreThresholdCallback(Callback):
     def __init__(self, f1_threshold=0.9, loss_threshold=0.2, validation_data=()):
@@ -170,7 +148,7 @@ class TF_NN_Model(BaseModel):
         class_weights_dict = dict(enumerate(class_weights))
 
         f1_score_callback = F1ScoreThresholdCallback(
-            f1_threshold=0.9, loss_threshold=0.1, validation_data=(self.X_test_scaled, y_test_categorical))
+            f1_threshold=0.8, loss_threshold=0.2, validation_data=(self.X_test_scaled, y_test_categorical))
 
         # Then pass these weights to the 'fit' method
         self.model.fit(

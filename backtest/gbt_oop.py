@@ -99,7 +99,7 @@ def rolling_window_train_predict(data, start_year, end_year, train_duration, tes
     return trade_logs, final_portfolio_values
 
 # Apply the rolling window approach
-trade_logs, final_values = rolling_window_train_predict(data, 2018, 2023, 12, 6)  # 12 months training, 6 months testing
+trade_logs, final_values = rolling_window_train_predict(data, 2013, 2023, 12, 6)  # 12 months training, 6 months testing
 
 pnl_per_quarter = [x - 10000 for x in final_values]
 

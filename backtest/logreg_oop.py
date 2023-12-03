@@ -80,11 +80,17 @@ def rolling_window_train_predict(data, start_year, end_year, train_duration, tes
         trade_log = trading_results['Trade Log']
         final_portfolio_value = trading_results['Final Portfolio Value']
         pnl_per_trade = trading_results['Profit/Loss per Trade']
+        interest_costs = sum(trading_results['Interest Costs'])
+        print("interest_costs111: ", interest_costs)
+
+        
 
         # Output
         print(trade_log)
         print("num trades: ", len(trade_log))
-        print(f"Final Portfolio Value: {final_portfolio_value}")
+        print(f"Final Portfolio Value Before Cost: {final_portfolio_value}")
+        final_portfolio_value = final_portfolio_value - interest_costs
+        print(f"Final Portfolio Value After Cost: {final_portfolio_value}")
 
         # pnl_per_trade = ( final_portfolio_value - starting_cash ) / len(trade_log)
         print("PnL per trade: ", pnl_per_trade)

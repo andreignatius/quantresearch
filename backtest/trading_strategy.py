@@ -14,6 +14,9 @@ class TradingStrategy:
         self.trade_log = []
         self.buy_price = None
         self.jpy_inventory = 0
+        self.annual_interest_rate = 0.01
+        self.daily_return_factors = []
+        self.interest_costs = []
 
     def execute_trades(self):
         predicted_categories = self.model.predict()
@@ -21,6 +24,10 @@ class TradingStrategy:
         for index, (row, prediction) in enumerate(zip(self.data.iterrows(), predicted_categories)):
             usd_jpy_spot_rate = row[1]['Open']
             current_date = row[1]['Date']
+            daily_change_percentage = row[1]['Daily_Change_Open_to_Close']
+            
+            if self.jpy_inventory > 0:
+                self.daily_return_factors.append(1 + (daily_change_percentage * self.leverage_factor))
 
             is_stop_loss_triggered = self._check_stop_loss(usd_jpy_spot_rate, current_date)
 
@@ -51,7 +58,11 @@ class TradingStrategy:
         self.cash += jpy_convert_to_usd
         sell_reason = "Model predicted sell" if not forced else "Margin call / stop-loss triggered"
         self.trade_log.append(f"Sell {self.jpy_inventory} JPY at {rate} on {date} ({sell_reason})")
+
+        self._apply_interest_charge()
+
         self.jpy_inventory = 0
+        self.daily_return_factors = []
 
     def _compute_mtm(self, usd_jpy_spot_rate):
         return self.cash + ( self.jpy_inventory / usd_jpy_spot_rate )
@@ -70,11 +81,11 @@ class TradingStrategy:
                 return True
         return False
 
-    # def _apply_interest_charge(self):
-    #     days_held = len(self.daily_return_factors)
-    #     daily_interest_rate = (1 + self.annual_interest_rate) ** (1/365) - 1
-    #     interest_charge = self.trading_lot * self.leverage_factor * daily_interest_rate * days_held
-    #     self.cash -= interest_charge
+    def _apply_interest_charge(self):
+        days_held = len(self.daily_return_factors)
+        daily_interest_rate = (1 + self.annual_interest_rate) ** (1/365) - 1
+        interest_charge = self.trading_lot * daily_interest_rate * days_held
+        self.interest_costs.append( interest_charge )
 
     def evaluate_performance(self):
         final_usd_jpy_spot_rate = self.data.iloc[-1]['Open']
@@ -83,9 +94,11 @@ class TradingStrategy:
         print("cash: ", self.cash)
         print("shares: ", self.jpy_inventory)
         pnl_per_trade = (final_portfolio_value - self.starting_cash) / len(self.trade_log) if self.trade_log else 0
+        print("check interest_costs: ", self.interest_costs)
         return {
             'Final Portfolio Value': final_portfolio_value,
             'Number of Trades': len(self.trade_log),
             'Profit/Loss per Trade': pnl_per_trade,
-            'Trade Log': self.trade_log
+            'Trade Log': self.trade_log,
+            'Interest Costs': self.interest_costs
         }

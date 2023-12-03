@@ -48,7 +48,6 @@ from sklearn.ensemble import ExtraTreesClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.ensemble import AdaBoostClassifier
-
 from sklearn import metrics
 from sklearn.metrics import mean_squared_error
 from sklearn.metrics import r2_score

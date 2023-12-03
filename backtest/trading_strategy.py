@@ -49,7 +49,7 @@ class TradingStrategy:
 
     def evaluate_performance(self):
         final_usd_jpy_spot_rate = self.data.iloc[-1]['Open']
-        final_portfolio_value = self.cash + (self.jpy_inventory / self.data.iloc[-1]['Open'])
+        final_portfolio_value = self.cash + (self.jpy_inventory / final_usd_jpy_spot_rate)
         print("cash: ", self.cash)
         print("shares: ", self.jpy_inventory)
         pnl_per_trade = (final_portfolio_value - self.starting_cash) / len(self.trade_log) if self.trade_log else 0

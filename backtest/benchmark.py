@@ -74,7 +74,7 @@ def rolling_window_train_predict(data, start_year, end_year, train_duration, tes
         take_profit_threshold = 0.05  # 5% rise from buying price
         cash = 10000  # Starting cash
         starting_cash = cash
-        trading_lot = 2000
+        trading_lot = 2500
         shares = 0    # Number of shares held
         trade_log = []  # Log of trades
         buy_price = None

@@ -9,3 +9,4 @@ pykalman
 hurst
 TA-lib
 yfinance
+openpyxl

@@ -111,6 +111,7 @@ Correlation_coef_spearman, p_value = spearmanr(Correlation_Checking.iloc[:,:-1],
 # Drop Currency Account Difference Feature as the correlation and Spearman Correlation with Signal is low
 forex_data = forex_data.drop(columns= ['Currency_Account_difference', 'Signal'])
 
+forex_data.to_csv('exogenous_variables.csv')
 print(forex_data.columns)
 print(Correlation, Correlation_coef_spearman)
 

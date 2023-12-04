@@ -1,7 +1,7 @@
 
 class TradingStrategy:
 
-    def __init__(self, model, data, start_cash=10000, trading_lot=7500, stop_loss_threshold=0.05, take_profit_threshold=0.05, leverage_factor=1, margin_call_threshold=0.5):
+    def __init__(self, model, data, start_cash=10000, trading_lot=7500, stop_loss_threshold=0.05, take_profit_threshold=0.05, leverage_factor=3, margin_call_threshold=0.5):
         self.model = model
         self.data = data
         self.cash = start_cash

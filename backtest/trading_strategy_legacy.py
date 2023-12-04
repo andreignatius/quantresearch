@@ -1,13 +1,13 @@
 
 class TradingStrategy:
 
-    def __init__(self, model, data, start_cash=10000, trading_lot=7500, stop_loss_threshold=0.05, take_profit_threshold=0.05, leverage_factor=1, margin_call_threshold=0.5):
+    def __init__(self, model, data, start_cash=10000, trading_lot=2500, stop_loss_threshold=0.05, take_profit_threshold=0.05, leverage_factor=3, margin_call_threshold=0.5):
         self.model = model
         self.data = data
         self.cash = start_cash
         self.margin_requirement = start_cash * margin_call_threshold
         self.starting_cash = start_cash
-        self.trading_lot = trading_lot
+        self.trading_lot = trading_lot * leverage_factor  # Adjusted for leverage
         self.stop_loss_threshold = stop_loss_threshold
         self.take_profit_threshold = take_profit_threshold
         self.leverage_factor = leverage_factor
@@ -44,7 +44,7 @@ class TradingStrategy:
                 self._sell_jpy(usd_jpy_spot_rate, current_date)
 
     def _buy_jpy(self, rate, date):
-        jpy_bought = int(self.trading_lot * self.leverage_factor * rate)
+        jpy_bought = int(self.trading_lot * rate)
         self.jpy_inventory += jpy_bought
         self.cash -= self.trading_lot
         self.buy_price = rate
@@ -54,44 +54,18 @@ class TradingStrategy:
         if self.jpy_inventory <= 0:
             return
 
-        # jpy_convert_to_usd = ( self.jpy_inventory / rate ) / self.leverage_factor
-        # self.cash += jpy_convert_to_usd
-        self.cash = self._compute_mtm(rate)
+        jpy_convert_to_usd = self.jpy_inventory / rate
+        self.cash += jpy_convert_to_usd
         sell_reason = "Model predicted sell" if not forced else "Margin call / stop-loss triggered"
         self.trade_log.append(f"Sell {self.jpy_inventory} JPY at {rate} on {date} ({sell_reason})")
 
-        self._apply_interest_charge(rate)
+        self._apply_interest_charge()
 
         self.jpy_inventory = 0
         self.daily_return_factors = []
 
     def _compute_mtm(self, usd_jpy_spot_rate):
-        # print("usd_jpy_spot_rate: ", usd_jpy_spot_rate)
-        # print("buy_price: ", self.buy_price)
-        # sell_quantum = ( self.jpy_inventory / usd_jpy_spot_rate )
-        # buy_quantum = ( self.jpy_inventory / self.buy_price )
-        # print("sell_quantum: ", sell_quantum)
-        # print("buy_quantum: ", buy_quantum)
-        # return self.cash + self.trading_lot + ( sell_quantum  - buy_quantum )
-        if self.jpy_inventory <= 0:
-            return self.cash
-
-        # Calculate the current value of the JPY inventory at the current spot rate
-        current_value = self.jpy_inventory / usd_jpy_spot_rate
-        print("current_value: ", current_value)
-        # Calculate the invested amount (in USD) for the JPY inventory
-        invested_amount = (self.jpy_inventory / self.buy_price)
-        print("invested_amount: ", invested_amount)
-        pnl = current_value - invested_amount
-        principal = self.trading_lot
-        # MTM is the current value minus the invested amount, adjusted for the cash
-        mtm = self.cash + principal + pnl
-
-        print("mtm: ", mtm)
-        # # Subtracting total interest charges from the MTM
-        # total_interest = sum(self.interest_costs)
-        # return mtm - total_interest
-        return mtm
+        return self.cash + ( self.jpy_inventory / usd_jpy_spot_rate )
 
     def _check_stop_loss(self, usd_jpy_spot_rate, date):
         if self.jpy_inventory > 0:
@@ -107,17 +81,17 @@ class TradingStrategy:
                 return True
         return False
 
-    def _apply_interest_charge(self, rate):
+    def _apply_interest_charge(self):
         days_held = len(self.daily_return_factors)
         daily_interest_rate = (1 + self.annual_interest_rate) ** (1/365) - 1
-        interest_charge = ( self.jpy_inventory / rate ) * daily_interest_rate * days_held
+        interest_charge = self.trading_lot * daily_interest_rate * days_held
         self.interest_costs.append( interest_charge )
 
     def evaluate_performance(self):
         final_usd_jpy_spot_rate = self.data.iloc[-1]['Open']
         # final_portfolio_value = self.cash + (self.jpy_inventory / final_usd_jpy_spot_rate)
         final_portfolio_value = self._compute_mtm(final_usd_jpy_spot_rate)
-        print("final_portfolio_value000: ", final_portfolio_value)
+        print("cash: ", self.cash)
         print("shares: ", self.jpy_inventory)
         pnl_per_trade = (final_portfolio_value - self.starting_cash) / len(self.trade_log) if self.trade_log else 0
         print("check interest_costs: ", self.interest_costs)
@@ -126,6 +100,5 @@ class TradingStrategy:
             'Number of Trades': len(self.trade_log),
             'Profit/Loss per Trade': pnl_per_trade,
             'Trade Log': self.trade_log,
-            'Interest Costs': self.interest_costs,
-            'Transaction Costs': len(self.trade_log),
+            'Interest Costs': self.interest_costs
         }

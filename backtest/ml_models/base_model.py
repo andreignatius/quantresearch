@@ -44,9 +44,10 @@ class BaseModel:
         self.data = pd.read_csv(self.file_path)
         self.data['Date'] = pd.to_datetime(self.data['Date'])
         self.calculate_daily_percentage_change()
-        
+
         self.perform_fourier_transform_analysis()
         self.calculate_stochastic_oscillator()
+        self.calculate_slow_stochastic_oscillator()
         self.construct_kalman_filter()
         self.detect_peaks_and_troughs()
 
@@ -93,7 +94,7 @@ class BaseModel:
             'DaysPerCycle': days_per_cycle
         })
 
-    def calculate_stochastic_oscillator(self, k_window=14, d_window=3):
+    def calculate_stochastic_oscillator(self, k_window=14, d_window=3, slow_k_window=3):
         """
         Calculate the Stochastic Oscillator.
         %K = (Current Close - Lowest Low)/(Highest High - Lowest Low) * 100
@@ -118,6 +119,22 @@ class BaseModel:
         # Handle any NaN values that may have been created
         self.data['%K'].bfill(inplace=True)
         self.data['%D'].bfill(inplace=True)
+
+    def calculate_slow_stochastic_oscillator(self, d_window=3, slow_k_window=3):
+        """
+        Calculate the Slow Stochastic Oscillator.
+        Slow %K = 3-period SMA of %K
+        Slow %D = 3-day SMA of Slow %K
+        """
+        # Calculate Slow %K, which is the moving average of %K
+        self.data['Slow %K'] = self.data['%K'].rolling(window=slow_k_window).mean()
+
+        # Calculate Slow %D, which is the moving average of Slow %K
+        self.data['Slow %D'] = self.data['Slow %K'].rolling(window=d_window).mean()
+
+        # Handle any NaN values
+        self.data['Slow %K'].bfill(inplace=True)
+        self.data['Slow %D'].bfill(inplace=True)
 
 
     def detect_fourier_signals(self):
@@ -341,6 +358,8 @@ class BaseModel:
              'FourierSignalBuy',
              '%K',
              '%D',
+             'Slow %K',
+             'Slow %D',
              'KalmanFilterEst',
              'KalmanFilterEst_1st_Deriv',
              'KalmanFilterEst_2nd_Deriv',

@@ -43,7 +43,8 @@ class BaseModel:
     def load_preprocess_data(self):
         self.data = pd.read_csv(self.file_path)
         self.data['Date'] = pd.to_datetime(self.data['Date'])
-
+        self.calculate_daily_percentage_change()
+        
         self.perform_fourier_transform_analysis()
         self.calculate_stochastic_oscillator()
         self.construct_kalman_filter()
@@ -55,6 +56,10 @@ class BaseModel:
         self.detect_fourier_signals()
         self.calculate_first_second_order_derivatives()
         self.preprocess_data()
+
+    def calculate_daily_percentage_change(self):
+        self.data['Daily_Change'] = self.data['Close'].pct_change() * 100
+        self.data['Daily_Change_Open_to_Close'] = ( ( self.data['Open'] - self.data['Close'].shift(1) ) / self.data['Close'].shift(1) ) * 100
 
     def perform_fourier_transform_analysis(self):
         # Fourier Transform Analysis
@@ -322,8 +327,7 @@ class BaseModel:
         self.train_data.sort_values('Date', inplace=True)
         self.train_data.to_csv('inspect_training_set.csv')
 
-        self.X_train = self.train_data[
-            [
+        feature_set = [
              'Short_Moving_Avg',
              'Short_Moving_Avg_1st_Deriv',
              'Short_Moving_Avg_2nd_Deriv',
@@ -342,29 +346,13 @@ class BaseModel:
              'KalmanFilterEst_2nd_Deriv',
              'HurstExponent'
             ]
+        self.X_train = self.train_data[
+            feature_set
         ]
         
         # ].iloc[:self.split_idx]
         self.X_test = self.test_data[
-            [
-             'Short_Moving_Avg',
-             'Short_Moving_Avg_1st_Deriv',
-             'Short_Moving_Avg_2nd_Deriv',
-             'Long_Moving_Avg',
-             'Long_Moving_Avg_1st_Deriv',
-             'Long_Moving_Avg_2nd_Deriv',
-             'RSI',
-             'DaysSincePeak',
-             'DaysSinceTrough',
-             'FourierSignalSell',
-             'FourierSignalBuy',
-             '%K',
-             '%D',
-             'KalmanFilterEst',
-             'KalmanFilterEst_1st_Deriv',
-             'KalmanFilterEst_2nd_Deriv',
-             'HurstExponent'
-            ]
+            feature_set
         ]
         # ].iloc[self.split_idx:]
 

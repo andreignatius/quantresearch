@@ -1,6 +1,8 @@
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
 import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
 from scipy.stats import spearmanr
 
 # Load data
@@ -8,7 +10,7 @@ file_path_JPYTBill = 'backtest/data/JPY_1Y_TBill_GJTB12MO.csv'
 file_path_USTBill = 'backtest/data/USD_1Y_TBill_H15T1Y.csv'
 file_path_JPYCPI = 'backtest/data/japan_CPI.xlsx'
 file_path_USCPI = 'backtest/data/US_CPI.xlsx'
-file_path = 'backtest/data/final_dataset_with_new_features.csv'
+file_path = 'backtest/final_dataset_with_new_features.csv'
 file_path_CurrencyAccount_JP = 'backtest/data/Japan_Currency_Account.xlsx'
 file_path_CurrencyAccount_US = 'backtest/data/US_Currency_Account.xlsx'
 file_path_FDI_JP = 'backtest/data/Japan_FDI.xlsx'
@@ -95,22 +97,66 @@ forex_data = forex_data.merge(CPI_data, on = 'Date')
 forex_data = forex_data.merge(TBill_data, on = 'Date')
 forex_data = forex_data.merge(CurrencyAccount_data, on = 'Date')
 forex_data = forex_data.merge(FDI_data, on = 'Date')
+forex_data = forex_data.dropna()
+forex_data = forex_data[~forex_data.isin([np.inf, -np.inf]).any(axis=1)]
 forex_data = forex_data.merge(M2_data, on= 'Date')
 
-# Check correlation
+
+
+# # Check correlation
+# forex_data['Signal'] = np.where(forex_data['Label'] == 'Buy', 1, 0)
+# forex_data['Signal'] = np.where(forex_data['Label'] == 'Sell', -1, forex_data['Signal'])
+# Correlation_Checking = forex_data[['CPI_Difference_Change',
+#        'Interest_Rate_Difference_Change', 'Currency_Account_difference',
+#        'FDI_Difference_Change', 'Signal']] # 'M2_Difference_Change'
+# # Normal Correlation
+# Correlation = Correlation_Checking.corr()
+# # Spearman Correlation
+# Correlation_coef_spearman, p_value = spearmanr(Correlation_Checking.iloc[:,:-1], Correlation_Checking['Signal'])
+#
+# # Drop Currency Account Difference Feature as the correlation and Spearman Correlation with Signal is low
+# forex_data = forex_data.drop(columns= ['Currency_Account_difference', 'Signal'])
+
+print(forex_data['Date'])
+# Check Importance
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestClassifier
+
 forex_data['Signal'] = np.where(forex_data['Label'] == 'Buy', 1, 0)
 forex_data['Signal'] = np.where(forex_data['Label'] == 'Sell', -1, forex_data['Signal'])
-Correlation_Checking = forex_data[['CPI_Difference_Change',
+
+X = forex_data[['CPI_Difference_Change',
        'Interest_Rate_Difference_Change', 'Currency_Account_difference',
-       'FDI_Difference_Change', 'M2_Difference_Change', 'Signal']]
-# Normal Correlation
-Correlation = Correlation_Checking.corr()
-# Spearman Correlation
-Correlation_coef_spearman, p_value = spearmanr(Correlation_Checking.iloc[:,:-1], Correlation_Checking['Signal'])
+       'FDI_Difference_Change', 'M2_Difference_Change']]
+y = forex_data['Signal']
 
-# Drop Currency Account Difference Feature as the correlation and Spearman Correlation with Signal is low
-forex_data = forex_data.drop(columns= ['Currency_Account_difference', 'Signal'])
 
-print(forex_data.columns)
-print(Correlation, Correlation_coef_spearman)
+forex_data.to_csv('exogenous_variables.csv')
+# print(np.isnan(X).values.sum())
+# Split data into training and testing sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Train RandomForestClassifier for each target variable
+RFC_Econometric = RandomForestClassifier(random_state=42)
+
+RFC_Econometric.fit(X_train, y_train)
+
+# Feature Importance for Peak
+feature_importance_econometric = RFC_Econometric.feature_importances_
+feature_names = ['CPI', 'Interest Rate', 'Current Account', 'FDI', 'Monetary Supply']
+
+# Create a DataFrame to store feature importance for Peak
+feature_importance_econometric_data = pd.DataFrame({'Feature': feature_names, 'Importance': feature_importance_econometric})
+feature_importance_econometric_data = feature_importance_econometric_data.sort_values(by='Importance', ascending=False)
+
+# Plotting Feature Importance for Peak
+plt.figure(figsize=(10, 6))
+ax = sns.barplot(x='Feature', y='Importance', data=feature_importance_econometric_data, palette='viridis')
+ax.tick_params(axis='y', labelsize=5)  # Set the desired font size here
+plt.title('Feature Importance for Econometric Exogenous Variables')
+plt.xlabel('Importance')
+plt.ylabel('Feature')
+plt.show()
+
+
 

@@ -1,3 +1,4 @@
+# pip install -r requirements_win.txt
 tensorflow-macos
 tensorflow-metal
 tensorflow-datasets
@@ -7,5 +8,7 @@ matplotlib
 scikit-learn
 pykalman
 hurst
-TA-lib
 yfinance
+backtesting
+seaborn
+scipy

@@ -1,3 +1,4 @@
+# pip install -r requirements_win.txt
 tensorflow
 pandas
 numpy
@@ -5,5 +6,6 @@ matplotlib
 scikit-learn
 pykalman
 hurst
-TA-lib
+# TA-lib -> conda install -c conda-forge ta-lib
 yfinance
+scipy

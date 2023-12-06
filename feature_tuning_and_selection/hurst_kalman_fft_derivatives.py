@@ -1,10 +1,10 @@
 import pandas as pd
 
-df = pd.read_csv('../backtest/final_dataset_with_new_features.csv',\
+df = pd.read_csv('../exogenous_variables.csv',\
                  parse_dates=["Date"]).drop(columns = "Volume")
 
 # List of columns to drop
-columns_to_drop = ['Open', 'Close', 'High', 'Low', 'Adj Close', 'Unnamed: 0','Label']
+columns_to_drop = ['Open', 'Close', 'High', 'Low', 'Adj Close', 'Unnamed: 0','Label', 'Signal']
 
 # Drop the specified columns
 df.drop(columns=columns_to_drop, inplace=True)

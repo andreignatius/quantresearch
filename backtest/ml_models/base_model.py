@@ -146,7 +146,9 @@ class BaseModel:
         # Add in fourier transform
         print("check fft_features: ", self.fft_features)
         dominant_period_lengths = sorted(set(
-            (self.fft_features.loc[:10, 'DaysPerCycle'].values/2).astype(int)), reverse=True)[:5]
+            (self.fft_features.loc[:10, 'DaysPerCycle'].values/2).astype(int)), reverse=True)
+        dominant_period_lengths = [ i for i in dominant_period_lengths if i < 30]
+        dominant_period_lengths = dominant_period_lengths[:5]
         print("check dominant_period_lengths: ", dominant_period_lengths)
         self.data['FourierSignalSell'] = self.data['DaysSinceTrough'].isin(
             dominant_period_lengths)

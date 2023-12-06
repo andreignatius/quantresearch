@@ -157,22 +157,22 @@ class BaseModel:
         print("FourierSignalSell: ", self.data['FourierSignalSell'])
         print("FourierSignalBuy: ", self.data['FourierSignalBuy'])
 
-    def detect_peaks_and_troughs(self):
-        # Peak and Trough Detection for Labeling
-        close_prices = self.data['Close'].to_numpy()
-        peaks, _ = find_peaks(close_prices)
-        troughs, _ = find_peaks(-1 * close_prices)
-        mid_trend = [i for i in range(len(close_prices))]
-        for peak in peaks:
-            mid_trend.remove(peak)
-        for trough in troughs:
-            mid_trend.remove(trough)
-        labels = pd.DataFrame(index=range(
-            len(close_prices)), columns=['Label'])
-        labels.loc[peaks, 'Label'] = 'Sell'
-        labels.loc[troughs, 'Label'] = 'Buy'
-        labels.loc[mid_trend, 'Label'] = 'Hold'
-        self.data = self.data.join(labels)
+    # def detect_peaks_and_troughs(self):
+    #     # Peak and Trough Detection for Labeling
+    #     close_prices = self.data['Close'].to_numpy()
+    #     peaks, _ = find_peaks(close_prices)
+    #     troughs, _ = find_peaks(-1 * close_prices)
+    #     mid_trend = [i for i in range(len(close_prices))]
+    #     for peak in peaks:
+    #         mid_trend.remove(peak)
+    #     for trough in troughs:
+    #         mid_trend.remove(trough)
+    #     labels = pd.DataFrame(index=range(
+    #         len(close_prices)), columns=['Label'])
+    #     labels.loc[peaks, 'Label'] = 'Sell'
+    #     labels.loc[troughs, 'Label'] = 'Buy'
+    #     labels.loc[mid_trend, 'Label'] = 'Hold'
+    #     self.data = self.data.join(labels)
 
     def detect_rolling_peaks_and_troughs(self, window_size=5):
         # Initialize columns to store the results
@@ -189,11 +189,13 @@ class BaseModel:
             # Find peaks
             peaks, _ = find_peaks(window_data)
             peaks_global_indices = [start_idx + p for p in peaks]
+            # print("peaks: ", peaks)
             self.data.loc[peaks_global_indices, 'isLocalPeak'] = True
 
             # Find troughs by inverting the data
             troughs, _ = find_peaks(-window_data)
             troughs_global_indices = [start_idx + t for t in troughs]
+            # print("troughs: ", troughs)
             self.data.loc[troughs_global_indices, 'isLocalTrough'] = True
 
         # Assign labels based on peaks and troughs
@@ -415,6 +417,7 @@ class BaseModel:
         self.train_data = self.train_data.sample(n=sample_size, replace=False, weights=self.train_data['Weight'])
         self.train_data.sort_values('Date', inplace=True)
         self.train_data.to_csv('inspect_training_set.csv')
+        self.test_data.to_csv('inspect_testing_set.csv')
 
         feature_set = [
              'Short_Moving_Avg',

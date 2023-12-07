@@ -1,10 +1,11 @@
 
 class TradingStrategy:
 
-    def __init__(self, model, data, start_cash=10000, trading_lot=7500, stop_loss_threshold=0.05, take_profit_threshold=0.05, leverage_factor=3, margin_call_threshold=0.5):
+    def __init__(self, model, data, start_cash=10000, trading_lot=7500, stop_loss_threshold=0.05, take_profit_threshold=0.05, leverage_factor=1, margin_call_threshold=0.5):
         self.model = model
         self.data = data
         self.cash = start_cash
+        self.last_cash = start_cash
         self.margin_requirement = start_cash * margin_call_threshold
         self.starting_cash = start_cash
         self.trading_lot = trading_lot
@@ -12,6 +13,7 @@ class TradingStrategy:
         self.take_profit_threshold = take_profit_threshold
         self.leverage_factor = leverage_factor
         self.trade_log = []
+        self.pnl_log = []
         self.buy_price = None
         self.jpy_inventory = 0
         self.annual_interest_rate = 0.03
@@ -59,6 +61,8 @@ class TradingStrategy:
         self.cash = self._compute_mtm(rate)
         sell_reason = "Model predicted sell" if not forced else "Margin call / stop-loss triggered"
         self.trade_log.append(f"Sell {self.jpy_inventory} JPY at {rate} on {date} ({sell_reason})")
+        self.pnl_log.append((self.cash - self.last_cash, date))
+        self.last_cash = self.cash
 
         self._apply_interest_charge(rate)
 
@@ -126,6 +130,7 @@ class TradingStrategy:
             'Number of Trades': len(self.trade_log),
             'Profit/Loss per Trade': pnl_per_trade,
             'Trade Log': self.trade_log,
+            'PNL Log': self.pnl_log,
             'Interest Costs': self.interest_costs,
             'Transaction Costs': len(self.trade_log),
         }

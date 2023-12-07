@@ -29,6 +29,7 @@ data.sort_values('Date', inplace=True)      # Sort by 'Date'
 
 def rolling_window_train_predict(data, start_year, end_year, train_duration, test_duration):
     trade_logs = []
+    pnl_logs = []
     final_portfolio_values = []
     interest_costs_total = []
     transaction_costs_total = []
@@ -79,11 +80,13 @@ def rolling_window_train_predict(data, start_year, end_year, train_duration, tes
         # Retrieve results and output
         trading_results = trading_strategy.evaluate_performance()
 
-        trade_log = trading_results['Trade Log']
-        final_portfolio_value = trading_results['Final Portfolio Value']
-        pnl_per_trade = trading_results['Profit/Loss per Trade']
-        interest_costs = sum(trading_results['Interest Costs'])
-        transaction_costs = trading_results['Transaction Costs']
+        trade_log               = trading_results['Trade Log']
+        pnl_log                 = trading_results['PNL Log']
+        final_portfolio_value   = trading_results['Final Portfolio Value']
+        pnl_per_trade           = trading_results['Profit/Loss per Trade']
+        interest_costs          = sum(trading_results['Interest Costs'])
+        transaction_costs       = trading_results['Transaction Costs']
+
         print("interest_costs111: ", interest_costs)
         print("transaction_costs111: ", transaction_costs)
 
@@ -102,21 +105,23 @@ def rolling_window_train_predict(data, start_year, end_year, train_duration, tes
 
         # Collect results
         trade_logs.append(trade_log)
+        pnl_logs.extend(pnl_log)
         final_portfolio_values.append(final_portfolio_value)
 
         # Move to the next window
         current_date += pd.DateOffset(months=6)
         train_duration += 6
 
-    return trade_logs, final_portfolio_values, interest_costs_total, transaction_costs_total
+    return trade_logs, pnl_logs, final_portfolio_values, interest_costs_total, transaction_costs_total
 
 
 # Apply the rolling window approach
-trade_logs, final_values, interest_costs_total, transaction_costs_total = rolling_window_train_predict(data, 2013, 2023, 12, 6)  # 12 months training, 6 months testing
+trade_logs, pnl_logs, final_values, interest_costs_total, transaction_costs_total = rolling_window_train_predict(data, 2013, 2023, 12, 6)  # 12 months training, 6 months testing
 
 pnl_per_quarter = [x - 10000 for x in final_values]
 
 print("final trade_logs: ", trade_logs)
+print("final pnl_logs: ", pnl_logs)
 print("final_values: ", final_values)
 print("pnl_per_quarter: ", pnl_per_quarter)
 print("final_pnl: ", sum(pnl_per_quarter) )

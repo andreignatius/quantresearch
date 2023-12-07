@@ -12,3 +12,4 @@ yfinance
 backtesting
 seaborn
 scipy
+openpyxl

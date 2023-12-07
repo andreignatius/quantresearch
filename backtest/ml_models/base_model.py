@@ -49,7 +49,8 @@ class BaseModel:
         self.calculate_stochastic_oscillator()
         self.calculate_slow_stochastic_oscillator()
         self.construct_kalman_filter()
-        self.detect_peaks_and_troughs()
+        # self.detect_peaks_and_troughs()
+        self.detect_rolling_peaks_and_troughs()
 
         self.calculate_moving_averages_and_rsi()
         self.estimate_hurst_exponent()
@@ -145,7 +146,9 @@ class BaseModel:
         # Add in fourier transform
         print("check fft_features: ", self.fft_features)
         dominant_period_lengths = sorted(set(
-            (self.fft_features.loc[:10, 'DaysPerCycle'].values/2).astype(int)), reverse=True)[:5]
+            (self.fft_features.loc[:10, 'DaysPerCycle'].values/2).astype(int)), reverse=True)
+        dominant_period_lengths = [ i for i in dominant_period_lengths if i < 30]
+        dominant_period_lengths = dominant_period_lengths[:5]
         print("check dominant_period_lengths: ", dominant_period_lengths)
         self.data['FourierSignalSell'] = self.data['DaysSinceTrough'].isin(
             dominant_period_lengths)
@@ -156,22 +159,52 @@ class BaseModel:
         print("FourierSignalSell: ", self.data['FourierSignalSell'])
         print("FourierSignalBuy: ", self.data['FourierSignalBuy'])
 
-    def detect_peaks_and_troughs(self):
-        # Peak and Trough Detection for Labeling
-        close_prices = self.data['Close'].to_numpy()
-        peaks, _ = find_peaks(close_prices)
-        troughs, _ = find_peaks(-1 * close_prices)
-        mid_trend = [i for i in range(len(close_prices))]
-        for peak in peaks:
-            mid_trend.remove(peak)
-        for trough in troughs:
-            mid_trend.remove(trough)
-        labels = pd.DataFrame(index=range(
-            len(close_prices)), columns=['Label'])
-        labels.loc[peaks, 'Label'] = 'Sell'
-        labels.loc[troughs, 'Label'] = 'Buy'
-        labels.loc[mid_trend, 'Label'] = 'Hold'
-        self.data = self.data.join(labels)
+    # def detect_peaks_and_troughs(self):
+    #     # Peak and Trough Detection for Labeling
+    #     close_prices = self.data['Close'].to_numpy()
+    #     peaks, _ = find_peaks(close_prices)
+    #     troughs, _ = find_peaks(-1 * close_prices)
+    #     mid_trend = [i for i in range(len(close_prices))]
+    #     for peak in peaks:
+    #         mid_trend.remove(peak)
+    #     for trough in troughs:
+    #         mid_trend.remove(trough)
+    #     labels = pd.DataFrame(index=range(
+    #         len(close_prices)), columns=['Label'])
+    #     labels.loc[peaks, 'Label'] = 'Sell'
+    #     labels.loc[troughs, 'Label'] = 'Buy'
+    #     labels.loc[mid_trend, 'Label'] = 'Hold'
+    #     self.data = self.data.join(labels)
+
+    def detect_rolling_peaks_and_troughs(self, window_size=5):
+        # Initialize columns to store the results
+        self.data['isLocalPeak'] = False
+        self.data['isLocalTrough'] = False
+
+        # Iterate through the DataFrame using a rolling window
+        for end_idx in range(window_size, len(self.data)):
+            start_idx = max(0, end_idx - window_size)
+
+            # Subset the data for the current window
+            window_data = self.data['Close'][start_idx:end_idx]
+
+            # Find peaks
+            peaks, _ = find_peaks(window_data)
+            peaks_global_indices = [start_idx + p for p in peaks]
+            # print("peaks: ", peaks)
+            self.data.loc[peaks_global_indices, 'isLocalPeak'] = True
+
+            # Find troughs by inverting the data
+            troughs, _ = find_peaks(-window_data)
+            troughs_global_indices = [start_idx + t for t in troughs]
+            # print("troughs: ", troughs)
+            self.data.loc[troughs_global_indices, 'isLocalTrough'] = True
+
+        # Assign labels based on peaks and troughs
+        self.data['Label'] = 'Hold'  # Default label
+        self.data.loc[self.data['isLocalPeak'], 'Label'] = 'Sell'
+        self.data.loc[self.data['isLocalTrough'], 'Label'] = 'Buy'
+    
 
     # Calculating Moving Averages and RSI manually
     def calculate_rsi(self, window=14):
@@ -345,7 +378,6 @@ class BaseModel:
     def preprocess_data(self):
         self.data.dropna(inplace=True)
 
-    # def train_test_split_time_series(self, test_size=0.4):
     def train_test_split_time_series(self):
         # Convert 'Date' column to datetime if it's not already
         # self.data['Date'] = pd.to_datetime(self.data['Date'])
@@ -387,6 +419,7 @@ class BaseModel:
         self.train_data = self.train_data.sample(n=sample_size, replace=False, weights=self.train_data['Weight'])
         self.train_data.sort_values('Date', inplace=True)
         self.train_data.to_csv('inspect_training_set.csv')
+        self.test_data.to_csv('inspect_testing_set.csv')
 
         feature_set = [
              'Short_Moving_Avg',

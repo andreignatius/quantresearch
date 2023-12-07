@@ -106,7 +106,7 @@ class Parameters(Strategy):
             self.position.close()
 
 bt = Backtest(df,Parameters,cash = 100000)
-print(bt.run())
+# print(bt.run())
 
 ### optimaization method ==> (already run)
 # opt_stats= bt.optimize(

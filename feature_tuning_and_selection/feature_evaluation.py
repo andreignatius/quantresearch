@@ -20,6 +20,10 @@ df_3 = pd.merge(df_2, df_1, on='Date', how='left')
 # Perform left join on 'date' column
 df_3 = pd.merge(df_3, df_peak, on='Date', how='left')
 
+# Bring in Hurst, Kalman, FFT, and higher order derivatives
+df_4 = pd.read_csv('hurst_kalman_fft_derivatives.csv')
+df_3 = pd.merge(df_3, df_4, on='Date', how='left')
+
 # Drop columns
 columns_to_drop = ['Unnamed: 0', 'Date', 'Open', 'High', 'Low',\
                    'Close_x', 'Close_y', 'Adj Close','Volume',\
@@ -33,10 +37,43 @@ df_3.dropna(inplace=True)
 pd.set_option('display.max_columns', None)
 # print(df_3.tail())
 
+#### Cleanup: remove identical columns by checking their data
+# Finding columns with identical values
+duplicate_cols = set()
+for i in range(len(df_3.columns)):
+    col_i = df_3.iloc[:, i]
+    for j in range(i + 1, len(df_3.columns)):
+        col_j = df_3.iloc[:, j]
+        if col_i.equals(col_j):
+            duplicate_cols.add(df_3.columns[j])
+
+# Keeping the first instance and dropping the duplicates
+df_3 = df_3.drop(columns=duplicate_cols)
+
+
+#### remove identical columns based on name
+# List of indicators that appear twice
+duplicated_indicators = ['ADX', 'Long_Moving_Avg', 'RSI_y', 'MACD_signal']
+
+# Assuming df_3 is your DataFrame containing these indicators
+
+# Drop one instance of each duplicated indicator
+for indicator in duplicated_indicators:
+    if indicator in df_3.columns:
+        # Find the indices of the duplicated columns
+        duplicate_indices = df_3.columns.get_loc(indicator)
+        if isinstance(duplicate_indices, int):  # Only one instance exists
+            continue
+        else:
+            # Drop one instance (keeping the first one)
+            df_3.drop(df_3.columns[duplicate_indices[0]], axis=1, inplace=True)
+
+# Now df_3 will have one instance of each indicator that appeared twice
+print(df_3.columns)  # Printing the remaining columns in df_3
 
 # Generate list of columns
-# columns_list = df_3.columns.tolist()
-# print(columns_list)
+columns_list = df_3.columns.tolist()
+print(columns_list)
 
 ############################################
 ## DATA CLEANUP COMPLETED, FEATURE ANALYSIS
@@ -49,7 +86,8 @@ y = df_3[['Peak', 'Trough']]  # Target variables
 # Split data into training and testing sets
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-# Train RandomForestClassifier for each target variable
+# Train RandomForestClassifier for each target variable (Random Forest Feature Importance)
+# other possible methodologies - recursive feature elimination (RFE), Gradient Boosting, Lasso Regression
 clf_peak = RandomForestClassifier(random_state=42)
 clf_trough = RandomForestClassifier(random_state=42)
 
@@ -89,7 +127,7 @@ plt.xlabel('Importance')
 plt.ylabel('Feature')
 plt.show()
 
-# Correlation Analysis
+# Correlation Analysis (DEPRECATED)
 # correlation_matrix = df_3.corr()
 
 # Plotting Correlation Matrix
@@ -97,3 +135,5 @@ plt.show()
 # sns.heatmap(correlation_matrix, annot=True, cmap='coolwarm', fmt='.2f')
 # plt.title('Correlation Matrix')
 # plt.show()
+
+# print(df_3.shape)

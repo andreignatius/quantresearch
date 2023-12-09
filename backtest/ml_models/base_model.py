@@ -422,11 +422,11 @@ class BaseModel:
         self.test_data.to_csv('inspect_testing_set.csv')
 
         feature_set = [
-             'Short_Moving_Avg',
-             'Short_Moving_Avg_1st_Deriv',
+             # 'Short_Moving_Avg',
+             # 'Short_Moving_Avg_1st_Deriv',
              'Short_Moving_Avg_2nd_Deriv',
-             'Long_Moving_Avg',
-             'Long_Moving_Avg_1st_Deriv',
+             # 'Long_Moving_Avg',
+             # 'Long_Moving_Avg_1st_Deriv',
              'Long_Moving_Avg_2nd_Deriv',
              'RSI',
              'DaysSincePeak',
@@ -437,10 +437,10 @@ class BaseModel:
              '%D',
              'Slow %K',
              'Slow %D',
-             'KalmanFilterEst',
+             # 'KalmanFilterEst',
              'KalmanFilterEst_1st_Deriv',
              'KalmanFilterEst_2nd_Deriv',
-             'HurstExponent',
+             # 'HurstExponent',
              # 'Interest_Rate_Difference',
              'Interest_Rate_Difference_Change',
              'Currency_Account_difference'

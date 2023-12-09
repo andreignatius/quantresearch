@@ -4,6 +4,7 @@ import numpy as np
 from scipy.signal import find_peaks
 from sklearn.preprocessing import StandardScaler
 from pykalman import KalmanFilter
+import talib
 from hurst import compute_Hc
 from sklearn.utils import resample
 
@@ -53,6 +54,10 @@ class BaseModel:
         self.detect_rolling_peaks_and_troughs()
 
         self.calculate_moving_averages_and_rsi()
+        self.calculate_bollinger_bands()
+        self.calculate_bollinger_bandwidth()
+        self.calculate_bollinger_percent_b()
+
         self.estimate_hurst_exponent()
         self.calculate_days_since_peaks_and_troughs()
         self.detect_fourier_signals()
@@ -226,6 +231,18 @@ class BaseModel:
         self.data['Long_Moving_Avg'] = self.data['Close'].rolling(
             window=long_window).mean()
         self.data['RSI'] = self.calculate_rsi(window=rsi_period)
+
+    # Bollinger Bands
+    def calculate_bollinger_bands(self):
+        self.data['BBand_Upper'], self.data['BBand_Middle'], self.data['BBand_Lower'] = talib.BBANDS(self.data['Close'], timeperiod=20)
+
+    # Bollinger Bandwidth
+    def calculate_bollinger_bandwidth(self):
+        self.data['Bollinger_Bandwidth'] = (self.data['BBand_Upper'] - self.data['BBand_Lower']) / self.data['BBand_Middle']
+
+    # Bollinger %B
+    def calculate_bollinger_percent_b(self):
+        self.data['Bollinger_PercentB'] = (self.data['Close'] - self.data['BBand_Lower']) / (self.data['BBand_Upper'] - self.data['BBand_Lower'])
 
     def construct_kalman_filter(self):
         close_prices = self.data['Close']
@@ -429,6 +446,7 @@ class BaseModel:
              # 'Long_Moving_Avg_1st_Deriv',
              'Long_Moving_Avg_2nd_Deriv',
              'RSI',
+             # 'Bollinger_PercentB',
              'DaysSincePeak',
              'DaysSinceTrough',
              'FourierSignalSell',
@@ -443,7 +461,7 @@ class BaseModel:
              # 'HurstExponent',
              # 'Interest_Rate_Difference',
              'Interest_Rate_Difference_Change',
-             'Currency_Account_difference'
+             # 'Currency_Account_difference'
             ]
         self.X_train = self.train_data[
             feature_set

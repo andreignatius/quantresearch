@@ -6,18 +6,17 @@ from sklearn.ensemble import RandomForestRegressor
 import matplotlib.pyplot as plt
 import seaborn as sns
 
+import pandas as pd
+
 # Pull data from feature parameter tuning and technical indicators
 df_1 = pd.read_csv('feature_parameter_tuning.csv')
-# print(len(df_1))
+
 df_2 = pd.read_csv('technical_indicators.csv')
-# print(len(df_2))
+
 df_peak = pd.read_csv('peak_detection.csv')
-# print(len(df_peak))
 
 # Perform left join on 'date' column
 df_3 = pd.merge(df_2, df_1, on='Date', how='left')
-
-# Perform left join on 'date' column
 df_3 = pd.merge(df_3, df_peak, on='Date', how='left')
 
 # Bring in Hurst, Kalman, FFT, and higher order derivatives
@@ -25,32 +24,35 @@ df_4 = pd.read_csv('hurst_kalman_fft_derivatives.csv')
 df_3 = pd.merge(df_3, df_4, on='Date', how='left')
 
 # Drop columns
-columns_to_drop = ['Unnamed: 0',\
-                   'Date',\
-                   'Open',\
-                   'High',\
-                   'Low',\
-                   'Close_x',\
-                   'Close_y',\
-                   'Adj Close','Volume',\
-                   'EoM',\
-                   'Trend_Up',\
-                   'positions',\
-                #    'DaysSincePeak',\
-                #    'DaysSinceTrough',\
-                   'PriceChangeSincePeak',\
-                   'PriceChangeSinceTrough',\
-                   'Daily_Change',\
-                   'Daily_Change_Open_to_Close'
-                   ]
+columns_to_drop = [
+    'Unnamed: 0',
+    'Date',
+    'Open',
+    'High',
+    'Low',
+    'Close_x',
+    'Close_y',
+    'Adj Close',
+    'Volume',
+    'EoM',
+    'Trend_Up',
+    'positions',
+    # 'DaysSincePeak',
+    # 'DaysSinceTrough',
+    'PriceChangeSincePeak',
+    'PriceChangeSinceTrough',
+    'Daily_Change',
+    'Daily_Change_Open_to_Close'
+]
 df_3.drop(columns=columns_to_drop, inplace=True)
 
 # Drop rows
 df_3.dropna(inplace=True)
 
 # Print dataframe
-pd.set_option('display.max_columns', None)
+# pd.set_option('display.max_columns', None)
 # print(df_3.tail())
+
 
 #### Cleanup: remove identical columns by checking their data
 # Finding columns with identical values
@@ -84,11 +86,11 @@ for indicator in duplicated_indicators:
             df_3.drop(df_3.columns[duplicate_indices[0]], axis=1, inplace=True)
 
 # Now df_3 will have one instance of each indicator that appeared twice
-print(df_3.columns)  # Printing the remaining columns in df_3
+# print(df_3.columns)  # Printing the remaining columns in df_3
 
 # Generate list of columns
-columns_list = df_3.columns.tolist()
-print(columns_list)
+# columns_list = df_3.columns.tolist()
+# print(columns_list)
 
 ############################################
 ## DATA CLEANUP COMPLETED, FEATURE ANALYSIS
@@ -127,7 +129,6 @@ plt.ylabel('Feature')
 plt.savefig('1_feature_evaluation_peak.png')
 plt.show()
 
-
 # Feature Importance for Trough
 feature_importance_trough = clf_trough.feature_importances_
 
@@ -145,14 +146,38 @@ plt.ylabel('Feature')
 plt.savefig('1_feature_evaluation_trough.png')
 plt.show()
 
+############################################
+## CREATE A DATAFRAME TO STORE RESULTS AND SAVE TO CSV
+############################################
 
-# Correlation Analysis (DEPRECATED)
-# correlation_matrix = df_3.corr()
+# Creating a DataFrame to store indicator importance to peak and trough detection along with source CSV file
+indicator_importance_df = pd.DataFrame(columns=['Technical Indicator', 'Importance to Peak', 'Importance to Trough', 'Source CSV'])
 
-# Plotting Correlation Matrix
-# plt.figure(figsize=(12, 8))
-# sns.heatmap(correlation_matrix, annot=True, cmap='coolwarm', fmt='.2f')
-# plt.title('Correlation Matrix')
-# plt.show()
+# Add technical indicators
+indicator_importance_df['Technical Indicator'] = feature_names
 
-# print(df_3.shape)
+# Add importance to peak and trough detection
+indicator_importance_df['Importance to Peak'] = feature_importance_peak
+indicator_importance_df['Importance to Trough'] = feature_importance_trough
+
+# Create a mapping for indicator source CSVs (assuming the columns are present in df_3)
+indicator_source_mapping = {
+    'Technical Indicator': feature_names,
+    'Source CSV': [
+        'technical_indicators.csv' if indicator in df_2.columns else (
+            'feature_parameter_tuning.csv' if indicator in df_1.columns else (
+                'peak_detection.csv' if indicator in df_peak.columns else 'hurst_kalman_fft_derivatives.csv'
+            )
+        ) for indicator in feature_names
+    ]
+}
+
+# Merge mapping with the indicator_importance_df
+indicator_source_df = pd.DataFrame(indicator_source_mapping)
+indicator_importance_df['Source CSV'] = indicator_source_df['Source CSV']
+
+# # Display the resulting DataFrame
+# print(indicator_importance_df)
+
+# Save the DataFrame to a CSV file
+indicator_importance_df.to_csv('feature_evaluation.csv', index=False)

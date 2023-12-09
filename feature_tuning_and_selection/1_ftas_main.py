@@ -6,7 +6,8 @@ python_files = [
     "technical_indicators.py",
     "feature_parameter_tuning.py",
     "hurst_kalman_fft_derivatives.py",
-    "feature_evaluation.py"
+    "feature_evaluation.py",
+    "feature_evaluation_vis"
 ]
 
 # Run each Python file in sequence

@@ -42,7 +42,7 @@ for leverage_factor in leverage_factors:
 print(pnl_data)
 
 # Save DataFrame to a CSV file
-pnl_data.to_csv('l_report_gen', index=False)
+pnl_data.to_csv('logreg_pnl_v_leverage.csv', index=False)
 
 # Plotting
 plt.figure(figsize=(8, 6))
@@ -55,7 +55,7 @@ plt.tight_layout()
 
 # Show plot
 plt.show()
-
+plt.savefig('logreg_pnl_v_leverage.png')
 
 
 

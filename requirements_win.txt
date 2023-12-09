@@ -9,3 +9,4 @@ hurst
 # TA-lib -> conda install -c conda-forge ta-lib
 yfinance
 scipy
+openpyxl

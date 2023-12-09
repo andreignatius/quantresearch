@@ -26,7 +26,7 @@ data['Date'] = pd.to_datetime(data['Date'])  # Convert 'Date' to datetime
 data.sort_values('Date', inplace=True)      # Sort by 'Date'
 
 
-def rolling_window_train_predict(data, start_year, end_year, train_duration, test_duration, leverage_factor=3):
+def rolling_window_train_predict(data, start_year, end_year, train_duration, test_duration, leverage_factor=3, annual_interest_rate=0.03):
     trade_logs = []
     final_portfolio_values = []
     interest_costs_total = []
@@ -42,6 +42,7 @@ def rolling_window_train_predict(data, start_year, end_year, train_duration, tes
     current_date = datetime(start_year, 1, 1)
 
     while current_date.year < end_year:
+        print("CURRENT YEAR GBT: ", current_date.year)
         # Define the start and end of the training period
         # train_start = current_date
         train_start = start_date
@@ -70,7 +71,7 @@ def rolling_window_train_predict(data, start_year, end_year, train_duration, tes
         # ... [Your backtesting logic here] ...
         # Backtesting with stop-loss and take-profit
         # Instantiate the TradingStrategy class
-        trading_strategy = TradingStrategy(model, data, leverage_factor=leverage_factor)
+        trading_strategy = TradingStrategy(model, data, leverage_factor=leverage_factor, annual_interest_rate=annual_interest_rate)
 
         # Run the trading strategy with the model's predictions
         trading_strategy.execute_trades()
@@ -109,19 +110,19 @@ def rolling_window_train_predict(data, start_year, end_year, train_duration, tes
 
     return trade_logs, final_portfolio_values, interest_costs_total, transaction_costs_total
 
+if __name__ == "__main__":
+    # Apply the rolling window approach
+    trade_logs, final_values, interest_costs_total, transaction_costs_total = rolling_window_train_predict(data, 2013, 2023, 12, 6)  # 12 months training, 6 months testing
 
-# Apply the rolling window approach
-trade_logs, final_values, interest_costs_total, transaction_costs_total = rolling_window_train_predict(data, 2013, 2023, 12, 6)  # 12 months training, 6 months testing
+    pnl_per_quarter = [x - 10000 for x in final_values]
 
-pnl_per_quarter = [x - 10000 for x in final_values]
-
-print("final trade_logs: ", trade_logs)
-print("final_values: ", final_values)
-print("pnl_per_quarter: ", pnl_per_quarter)
-print("final_pnl: ", sum(pnl_per_quarter) )
-print("interest_costs: ", interest_costs_total)
-print("transaction_costs :", transaction_costs_total)
-percentage_returns = ( sum(pnl_per_quarter) / len(pnl_per_quarter) ) / 10000 * 100
-print("percentage_returns per period: ", percentage_returns)
-print("percentage_returns per annum: ", percentage_returns * 2)
+    print("final trade_logs: ", trade_logs)
+    print("final_values: ", final_values)
+    print("pnl_per_quarter: ", pnl_per_quarter)
+    print("final_pnl: ", sum(pnl_per_quarter) )
+    print("interest_costs: ", interest_costs_total)
+    print("transaction_costs :", transaction_costs_total)
+    percentage_returns = ( sum(pnl_per_quarter) / len(pnl_per_quarter) ) / 10000 * 100
+    print("percentage_returns per period: ", percentage_returns)
+    print("percentage_returns per annum: ", percentage_returns * 2)
 

@@ -26,7 +26,7 @@ data['Date'] = pd.to_datetime(data['Date'])  # Convert 'Date' to datetime
 data.sort_values('Date', inplace=True)      # Sort by 'Date'
 
 
-def rolling_window_train_predict(data, start_year, end_year, train_duration, test_duration):
+def rolling_window_train_predict(data, start_year, end_year, train_duration, test_duration, leverage_factor=3):
     trade_logs = []
     final_portfolio_values = []
     interest_costs_total = []
@@ -70,7 +70,7 @@ def rolling_window_train_predict(data, start_year, end_year, train_duration, tes
         # ... [Your backtesting logic here] ...
         # Backtesting with stop-loss and take-profit
         # Instantiate the TradingStrategy class
-        trading_strategy = TradingStrategy(model, data)
+        trading_strategy = TradingStrategy(model, data, leverage_factor=leverage_factor)
 
         # Run the trading strategy with the model's predictions
         trading_strategy.execute_trades()

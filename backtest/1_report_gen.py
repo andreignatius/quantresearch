@@ -1,6 +1,7 @@
 import pandas as pd
 import warnings
-from logreg_oop import rolling_window_train_predict
+from logreg_oop import rolling_window_train_predict as rolling_window_train_predict_logreg
+from gbt_oop import rolling_window_train_predict as rolling_window_train_predict_gbt
 import os
 import matplotlib.pyplot as plt
 
@@ -14,7 +15,7 @@ warnings.filterwarnings("ignore")
 # leverage_factors = [x / 2 for x in range(2, 11)]
 
 # Generate leverage factors
-leverage_factors = [1, 1.5, 2, 3]
+leverage_factors = [1, 1.5, 2, 3, 4]
 
 
 # Load the Forex data
@@ -25,24 +26,41 @@ data['Date'] = pd.to_datetime(data['Date'])  # Convert 'Date' to datetime
 data.sort_values('Date', inplace=True)       # Sort by 'Date'
 
 # Create an empty DataFrame to store leverage and P&L
-pnl_data = pd.DataFrame(columns=['Leverage', 'PnL'])
+pnl_data = pd.DataFrame(columns=['Leverage', 'PnL', 'Interest Costs', 'Transaction Costs', '% Returns per Period', '% Returns per Annum'])
 
 # Cycle through leverage factors
 for leverage_factor in leverage_factors:
-    # Obtain P&L values
-    trade_logs, final_values, _, _ = rolling_window_train_predict(data, 2013, 2023, 12, 6, leverage_factor=leverage_factor)  # 12 months training, 6 months testing
+    # Apply the rolling window approach to obtain PnL values
+    trade_logs, final_values, interest_costs_total, transaction_costs_total = rolling_window_train_predict_logreg(data, 2013, 2023, 12, 6, leverage_factor=leverage_factor)  # 12 months training, 6 months testing
+
     pnl_per_quarter = [x - 10000 for x in final_values]
     total_pnl = sum(pnl_per_quarter)
 
+    print("final trade_logs: ", trade_logs)
+    print("final_values: ", final_values)
+    print("pnl_per_quarter: ", pnl_per_quarter)
+    print("final_pnl: ", total_pnl )
+    print("interest_costs: ", interest_costs_total)
+    print("transaction_costs :", transaction_costs_total)
+    percentage_returns = ( sum(pnl_per_quarter) / len(pnl_per_quarter) ) / 10000 * 100
+    print("percentage_returns per period: ", percentage_returns)
+    print("percentage_returns per annum: ", percentage_returns * 2)
+
     # Append leverage and P&L to the DataFrame using pd.concat
-    new_row = pd.DataFrame({'Leverage': [leverage_factor], 'PnL': [total_pnl]})
+    new_row = pd.DataFrame({ 
+    	'Leverage': [leverage_factor], 
+    	'PnL': [total_pnl],
+    	'Interest Costs': [sum(interest_costs_total)],
+    	'Transaction Costs': [sum(transaction_costs_total)],
+    	'% Returns per Period': [percentage_returns], 
+    	'% Returns per Annum': [percentage_returns * 2],
+    	})
     pnl_data = pd.concat([pnl_data, new_row], ignore_index=True)
 
-# Display the DataFrame
-print(pnl_data)
-
-# Save DataFrame to a CSV file
-pnl_data.to_csv('logreg_pnl_v_leverage.csv', index=False)
+    # Display the DataFrame
+    print(pnl_data)
+    # Save DataFrame to a CSV file
+    pnl_data.to_csv('logreg_pnl_v_leverage.csv', index=False)
 
 # Plotting
 plt.figure(figsize=(8, 6))
@@ -54,12 +72,60 @@ plt.grid(True)
 plt.tight_layout()
 
 # Show plot
-plt.show()
 plt.savefig('logreg_pnl_v_leverage.png')
+plt.show()
 
 
 
+# Create an empty DataFrame to store leverage and P&L
+pnl_data = pd.DataFrame(columns=['Leverage', 'PnL', 'Interest Costs', 'Transaction Costs', '% Returns per Period', '% Returns per Annum'])
 
+# Cycle through leverage factors
+for leverage_factor in leverage_factors:
+    # Apply the rolling window approach to obtain PnL values
+    trade_logs, final_values, interest_costs_total, transaction_costs_total = rolling_window_train_predict_gbt(data, 2013, 2023, 12, 6, leverage_factor=leverage_factor)  # 12 months training, 6 months testing
+
+    pnl_per_quarter = [x - 10000 for x in final_values]
+    total_pnl = sum(pnl_per_quarter)
+
+    print("final trade_logs: ", trade_logs)
+    print("final_values: ", final_values)
+    print("pnl_per_quarter: ", pnl_per_quarter)
+    print("final_pnl: ", total_pnl )
+    print("interest_costs: ", interest_costs_total)
+    print("transaction_costs :", transaction_costs_total)
+    percentage_returns = ( sum(pnl_per_quarter) / len(pnl_per_quarter) ) / 10000 * 100
+    print("percentage_returns per period: ", percentage_returns)
+    print("percentage_returns per annum: ", percentage_returns * 2)
+
+    # Append leverage and P&L to the DataFrame using pd.concat
+    new_row = pd.DataFrame({ 
+    	'Leverage': [leverage_factor], 
+    	'PnL': [total_pnl],
+    	'Interest Costs': [sum(interest_costs_total)],
+    	'Transaction Costs': [sum(transaction_costs_total)],
+    	'% Returns per Period': [percentage_returns], 
+    	'% Returns per Annum': [percentage_returns * 2],
+    	})
+    pnl_data = pd.concat([pnl_data, new_row], ignore_index=True)
+
+    # Display the DataFrame
+    print(pnl_data)
+    # Save DataFrame to a CSV file
+    pnl_data.to_csv('gbt_pnl_v_leverage.csv', index=False)
+
+# Plotting
+plt.figure(figsize=(8, 6))
+plt.plot(pnl_data['Leverage'], pnl_data['PnL'], marker='o', linestyle='-')
+plt.title('PnL vs Leverage')
+plt.xlabel('Leverage')
+plt.ylabel('PnL')
+plt.grid(True)
+plt.tight_layout()
+
+# Show plot
+plt.savefig('gbt_pnl_v_leverage.png')
+plt.show()
 
 
 

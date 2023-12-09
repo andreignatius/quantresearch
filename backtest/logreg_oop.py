@@ -71,6 +71,7 @@ def rolling_window_train_predict(data, start_year, end_year, train_duration, tes
         # ... [Your backtesting logic here] ...
         # Backtesting with stop-loss and take-profit
         # Instantiate the TradingStrategy class
+        leverage_factor = 1
         trading_strategy = TradingStrategy(model, data)
 
         # Run the trading strategy with the model's predictions

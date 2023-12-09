@@ -1,7 +1,7 @@
 
 class TradingStrategy:
 
-    def __init__(self, model, data, start_cash=10000, trading_lot=7500, stop_loss_threshold=0.05, take_profit_threshold=0.05, leverage_factor=1, margin_call_threshold=0.5):
+    def __init__(self, model, data, start_cash=10000, trading_lot=7500, stop_loss_threshold=0.1, take_profit_threshold=0.05, leverage_factor=1, margin_call_threshold=0.5, annual_interest_rate=0.03):
         self.model = model
         self.data = data
         self.cash = start_cash
@@ -14,7 +14,7 @@ class TradingStrategy:
         self.trade_log = []
         self.buy_price = None
         self.jpy_inventory = 0
-        self.annual_interest_rate = 0.03
+        self.annual_interest_rate = annual_interest_rate
         self.daily_return_factors = []
         self.interest_costs = []
 
@@ -96,7 +96,7 @@ class TradingStrategy:
     def _check_stop_loss(self, usd_jpy_spot_rate, date):
         if self.jpy_inventory > 0:
             change_percentage = (usd_jpy_spot_rate - self.buy_price) / self.buy_price
-            if change_percentage <= -self.stop_loss_threshold:
+            if change_percentage * self.leverage_factor > self.stop_loss_threshold:
                 self._sell_jpy(usd_jpy_spot_rate, date, forced=True)
                 return True
         return False

@@ -110,7 +110,9 @@ class TradingStrategy:
     def _apply_interest_charge(self, rate):
         days_held = len(self.daily_return_factors)
         daily_interest_rate = (1 + self.annual_interest_rate) ** (1/365) - 1
-        interest_charge = ( self.jpy_inventory / rate ) * daily_interest_rate * days_held
+        # interest_charge = ( self.jpy_inventory / rate ) * daily_interest_rate * days_held
+        borrowed_quantum = self.jpy_inventory - ( self.jpy_inventory / self.leverage_factor )
+        interest_charge = ( borrowed_quantum / rate ) * daily_interest_rate * days_held
         self.interest_costs.append( interest_charge )
 
     def evaluate_performance(self):

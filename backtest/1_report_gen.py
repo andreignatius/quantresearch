@@ -14,7 +14,7 @@ warnings.filterwarnings("ignore")
 # leverage_factors = [x / 2 for x in range(2, 11)]
 
 # Generate leverage factors
-leverage_factors = [1, 1.5, 2, 3]
+leverage_factors = [1, 1.5, 2, 3, 4]
 
 
 # Load the Forex data

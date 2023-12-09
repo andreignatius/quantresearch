@@ -14,7 +14,7 @@ warnings.filterwarnings("ignore")
 # leverage_factors = [x / 2 for x in range(2, 11)]
 
 # Generate leverage factors
-leverage_factors = [(2)]
+leverage_factors = [1, 1.5, 2, 3]
 
 
 # Load the Forex data
@@ -30,7 +30,7 @@ pnl_data = pd.DataFrame(columns=['Leverage', 'PnL'])
 # Cycle through leverage factors
 for leverage_factor in leverage_factors:
     # Obtain P&L values
-    trade_logs, final_values, _, _ = rolling_window_train_predict(data, 2013, 2023, 12, 6)  # 12 months training, 6 months testing
+    trade_logs, final_values, _, _ = rolling_window_train_predict(data, 2013, 2023, 12, 6, leverage_factor=leverage_factor)  # 12 months training, 6 months testing
     pnl_per_quarter = [x - 10000 for x in final_values]
     total_pnl = sum(pnl_per_quarter)
 

@@ -25,9 +25,24 @@ df_4 = pd.read_csv('hurst_kalman_fft_derivatives.csv')
 df_3 = pd.merge(df_3, df_4, on='Date', how='left')
 
 # Drop columns
-columns_to_drop = ['Unnamed: 0', 'Date', 'Open', 'High', 'Low',\
-                   'Close_x', 'Close_y', 'Adj Close','Volume',\
-                    'EoM','Trend_Up','positions']
+columns_to_drop = ['Unnamed: 0',\
+                   'Date',\
+                   'Open',\
+                   'High',\
+                   'Low',\
+                   'Close_x',\
+                   'Close_y',\
+                   'Adj Close','Volume',\
+                   'EoM',\
+                   'Trend_Up',\
+                   'positions',\
+                #    'DaysSincePeak',\
+                #    'DaysSinceTrough',\
+                   'PriceChangeSincePeak',\
+                   'PriceChangeSinceTrough',\
+                   'Daily_Change',\
+                   'Daily_Change_Open_to_Close'
+                   ]
 df_3.drop(columns=columns_to_drop, inplace=True)
 
 # Drop rows
@@ -109,7 +124,9 @@ ax.tick_params(axis='y', labelsize=5)  # Set the desired font size here
 plt.title('Feature Importance for Peak')
 plt.xlabel('Importance')
 plt.ylabel('Feature')
+plt.savefig('1_feature_evaluation_peak.png')
 plt.show()
+
 
 # Feature Importance for Trough
 feature_importance_trough = clf_trough.feature_importances_
@@ -125,7 +142,9 @@ ax.tick_params(axis='y', labelsize=5)  # Set the desired font size here
 plt.title('Feature Importance for Trough')
 plt.xlabel('Importance')
 plt.ylabel('Feature')
+plt.savefig('1_feature_evaluation_trough.png')
 plt.show()
+
 
 # Correlation Analysis (DEPRECATED)
 # correlation_matrix = df_3.corr()

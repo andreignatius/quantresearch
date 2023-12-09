@@ -10,3 +10,4 @@ hurst
 yfinance
 scipy
 openpyxl
+backtesting

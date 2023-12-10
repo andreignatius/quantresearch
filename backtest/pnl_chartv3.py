@@ -37,8 +37,6 @@ data = {
     'Cumulative_PNL_GBT': cumulative_pnl_gbt
 }
 
-# df = pd.DataFrame(data)
-
 #####################################################
 
 import yfinance as yf
@@ -93,25 +91,26 @@ combined_data = combined_data.drop(columns=['Period'])
 # Display the combined DataFrame
 print(combined_data)
 
-#####################################################
-
-# Filter the combined data to include only data up to March 2022
 combined_data_cut_off = combined_data[combined_data['Date'] <= datetime(2022, 3, 1)]
 
-# Plotting the filtered data
+#####################################################
+
+# Filter data for S&P500 and USD/JPY up to '2022-03-01'
+filtered_pnl_data = pnl_data[pnl_data['Date'] <= '2022-03-01']
+
 plt.figure(figsize=(10, 6))  # Set the figure size
 
-# Plot S&P 500 PnL
-plt.plot(combined_data_cut_off['Date'], combined_data_cut_off['S&P500 PnL'], label='S&P 500 PnL')
+# Plot S&P 500 PnL up to '2022-03-01'
+plt.plot(filtered_pnl_data['Date'], filtered_pnl_data['S&P500 PnL'], label='S&P 500 PnL')
 
-# Plot USD/JPY PnL
-plt.plot(combined_data_cut_off['Date'], combined_data_cut_off['USD_JPY PnL'], label='USD/JPY PnL')
+# Plot USD/JPY PnL up to '2022-03-01'
+plt.plot(filtered_pnl_data['Date'], filtered_pnl_data['USD_JPY PnL'], label='USD/JPY PnL')
 
 # Plot Cumulative PNL for LogReg and GBT
-plt.plot(combined_data_cut_off['Date'], combined_data_cut_off['Cumulative_PNL_LogReg'], label='Cumulative PNL LogReg')
-plt.plot(combined_data_cut_off['Date'], combined_data_cut_off['Cumulative_PNL_GBT'], label='Cumulative PNL GBT')
+plt.plot(data_df['Period'], data_df['Cumulative_PNL_LogReg'], label='Cumulative PNL LogReg')
+plt.plot(data_df['Period'], data_df['Cumulative_PNL_GBT'], label='Cumulative PNL GBT')
 
-plt.xlabel('Date')  # Set the label for the x-axis
+plt.xlabel('Year')  # Set the label for the x-axis
 plt.ylabel('Profit/Loss')  # Set the label for the y-axis
 plt.title('PNL Performance up to March 2022')  # Set the plot title
 plt.legend()  # Show legend
@@ -120,6 +119,6 @@ plt.grid(True)  # Show gridlines
 plt.tight_layout()  # Adjust layout to prevent clipping of labels
 
 # Save the plot as a PNG file
-plt.savefig('pnl_chartv3', dpi=300, bbox_inches='tight')  # Save the plot as PNG
+plt.savefig('pnl_chartv3.png', dpi=300, bbox_inches='tight')  # Save the plot as PNG
 
 plt.show()  # Display the plot

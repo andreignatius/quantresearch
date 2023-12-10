@@ -107,12 +107,12 @@ plt.plot(filtered_pnl_data['Date'], filtered_pnl_data['S&P500 PnL'], label='S&P 
 plt.plot(filtered_pnl_data['Date'], filtered_pnl_data['USD_JPY PnL'], label='USD/JPY PnL')
 
 # Plot Cumulative PNL for LogReg and GBT
-plt.plot(data_df['Period'], data_df['Cumulative_PNL_LogReg'], label='Cumulative PNL LogReg')
-plt.plot(data_df['Period'], data_df['Cumulative_PNL_GBT'], label='Cumulative PNL GBT')
+plt.plot(data_df['Period'], data_df['Cumulative_PNL_LogReg'], label='Logistic Regression PnL')
+plt.plot(data_df['Period'], data_df['Cumulative_PNL_GBT'], label='GBT PnL')
 
 plt.xlabel('Year')  # Set the label for the x-axis
 plt.ylabel('Profit/Loss')  # Set the label for the y-axis
-plt.title('PNL Performance up to March 2022')  # Set the plot title
+plt.title('PNL Performance from 2013 Onwards')  # Set the plot title
 plt.legend()  # Show legend
 
 plt.grid(True)  # Show gridlines

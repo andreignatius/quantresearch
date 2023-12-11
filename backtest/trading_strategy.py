@@ -45,7 +45,6 @@ class TradingStrategy:
 
     def execute_trades_perfect_future_knowledge(self):
         for index, row in self.data.iterrows():
-            print("index: ", index, "row: ", row)
             usd_jpy_spot_rate = row['Open']
             current_date = row['Date']
             daily_change_percentage = row['Daily_Change_Open_to_Close']

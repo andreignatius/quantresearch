@@ -26,9 +26,11 @@ data['Date'] = pd.to_datetime(data['Date'])  # Convert 'Date' to datetime
 data.sort_values('Date', inplace=True)      # Sort by 'Date'
 
 
-def rolling_window_train_predict(data, start_year, end_year, train_duration, test_duration):
+def rolling_window_train_predict(data, start_year, end_year, train_duration, test_duration, leverage_factor=3, annual_interest_rate=0.03):
     trade_logs = []
     final_portfolio_values = []
+    interest_costs_total = []
+    transaction_costs_total = []
 
     # Convert 'Date' column to datetime if it's not already
     data['Date'] = pd.to_datetime(data['Date'])
@@ -70,67 +72,26 @@ def rolling_window_train_predict(data, start_year, end_year, train_duration, tes
         # Backtesting with stop-loss and take-profit
         # Instantiate the TradingStrategy class
         # Backtesting with stop-loss and take-profit
-        stop_loss_threshold = 0.05  # 5% drop from buying price
-        take_profit_threshold = 0.05  # 5% rise from buying price
-        cash = 10000  # Starting cash
-        starting_cash = cash
-        trading_lot = 2500
-        shares = 0    # Number of shares held
-        trade_log = []  # Log of trades
-        buy_price = None
-        for index, row in data.iterrows():
-            print("index: ", index, "row: ", row)
-            current_price = row['Open']
+        trading_strategy = TradingStrategy(model, data, leverage_factor=leverage_factor, annual_interest_rate=annual_interest_rate)
+        trading_strategy.execute_trades_perfect_future_knowledge()
 
-            # if shares > 0:
-            #     change_percentage = (current_price - buy_price) / buy_price
-            #     if change_percentage <= -stop_loss_threshold or change_percentage >= take_profit_threshold:
-            #         cash += shares * current_price
-            #         trade_log.append(f"Sell {shares} shares at {current_price} on {row['Date']} (Stop-loss/Take-profit triggered)")
-            #         shares = 0
-            #         continue
+        trading_results = trading_strategy.evaluate_performance()
+        trade_log = trading_results['Trade Log']
+        final_portfolio_value = trading_results['Final Portfolio Value']
+        pnl_per_trade = trading_results['Profit/Loss per Trade']
+        interest_costs = sum(trading_results['Interest Costs'])
+        transaction_costs = trading_results['Transaction Costs']
+        print("interest_costs111: ", interest_costs)
+        print("transaction_costs111: ", transaction_costs)
 
-            # Model-based trading decisions
-            if row['Label'] == 'Buy' and cash >= trading_lot:  # Buy signal
-                # num_shares_to_buy = int(cash / current_price)
-                num_shares_to_buy = int(trading_lot / current_price)
-                shares += num_shares_to_buy
-                cash -= num_shares_to_buy * current_price
-                buy_price = current_price
-                trade_log.append(
-                    f"Buy {num_shares_to_buy} shares at {current_price} on {row['Date']}")
-                print(
-                    f"ACTION : Buying {num_shares_to_buy} shares at {current_price} on {row['Date']}")
-            elif row['Label'] == 'Sell' and shares > 0:  # Sell signal
-                cash += shares * current_price
-                print("CHECK : cash amt ", cash)
-                # num_shares_to_sell = int(trading_lot / current_price)
-                # cash +=
-                trade_log.append(
-                    f"Sell {shares} shares at {current_price} on {row['Date']} (Model signal)")
-                print(
-                    f"ACTION : Selling {shares} shares at {current_price} on {row['Date']} (Model signal)")
-                shares = 0
+        interest_costs_total.append( interest_costs )
+        transaction_costs_total.append( transaction_costs )
 
-        # Calculate final portfolio value
-        final_portfolio_value = cash + shares * \
-            data.iloc[-1]['Open']
+        print(f"Final Portfolio Value Before Cost: {final_portfolio_value}")
+        final_portfolio_value = final_portfolio_value - ( interest_costs + transaction_costs )
+        print(f"Final Portfolio Value After Cost: {final_portfolio_value}")
 
-        # Output
-        for log in trade_log:
-            print(log)
-        print(f"Final Portfolio Value: {final_portfolio_value}")
-
-        # trade_log = trading_results['Trade Log']
-        # final_portfolio_value = trading_results['Final Portfolio Value']
-        # pnl_per_trade = trading_results['Profit/Loss per Trade']
-
-        # Output
-        print(trade_log)
-        print("num trades: ", len(trade_log))
-        print(f"Final Portfolio Value: {final_portfolio_value}")
-
-        pnl_per_trade = ( final_portfolio_value - starting_cash ) / len(trade_log)
+        # pnl_per_trade = ( final_portfolio_value - starting_cash ) / len(trade_log)
         print("PnL per trade: ", pnl_per_trade)
 
         # Collect results
@@ -141,17 +102,23 @@ def rolling_window_train_predict(data, start_year, end_year, train_duration, tes
         current_date += pd.DateOffset(months=6)
         train_duration += 6
 
-    return trade_logs, final_portfolio_values
+    return trade_logs, final_portfolio_values, interest_costs_total, transaction_costs_total
 
 
-# Apply the rolling window approach
-trade_logs, final_values = rolling_window_train_predict(data, 2013, 2023, 12, 6)  # 12 months training, 6 months testing
+if __name__ == "__main__":
+    # Apply the rolling window approach
+    trade_logs, final_values, interest_costs_total, transaction_costs_total = rolling_window_train_predict(data, 2013, 2023, 12, 6)  # 12 months training, 6 months testing
 
-pnl_per_quarter = [x - 10000 for x in final_values]
+    pnl_per_quarter = [x - 10000 for x in final_values]
 
-print("final trade_logs: ", trade_logs)
-print("final_values: ", final_values)
-print("pnl_per_quarter: ", pnl_per_quarter)
-print("final_pnl: ", sum(pnl_per_quarter) )
-percentage_returns = ( sum(pnl_per_quarter) / len(pnl_per_quarter) ) / 10000 * 100
-print("percentage_returns: ", percentage_returns)
+    print("final trade_logs: ", trade_logs)
+    print("final_values: ", final_values)
+    print("pnl_per_quarter: ", pnl_per_quarter)
+    print("final_pnl: ", sum(pnl_per_quarter) )
+    print("interest_costs: ", interest_costs_total)
+    print("transaction_costs :", transaction_costs_total)
+    percentage_returns = 0
+    if len(pnl_per_quarter) > 0:
+        percentage_returns = ( sum(pnl_per_quarter) / len(pnl_per_quarter) ) / 10000 * 100
+    print("percentage_returns per period: ", percentage_returns)
+    print("percentage_returns per annum: ", percentage_returns * 2)

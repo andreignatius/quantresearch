@@ -3,6 +3,7 @@ import warnings
 from logreg_oop import rolling_window_train_predict as rolling_window_train_predict_logreg
 from gbt_oop import rolling_window_train_predict as rolling_window_train_predict_gbt
 from benchmark import rolling_window_train_predict as rolling_window_train_predict_benchmark
+# from tf_oop import rolling_window_train_predict as rolling_window_train_predict_nn
 import os
 import matplotlib.pyplot as plt
 import json
@@ -20,8 +21,6 @@ warnings.filterwarnings("ignore")
 leverage_factors = [1, 1.5, 2, 3, 4]
 annual_interest_rate = 0.05
 
-logreg_results = {}
-
 # Load the Forex data
 current_directory = os.path.dirname(__file__)
 file_path = os.path.join(current_directory, 'data/USD_JPY_YF.csv')
@@ -29,6 +28,7 @@ data = pd.read_csv(file_path)
 data['Date'] = pd.to_datetime(data['Date'])  # Convert 'Date' to datetime
 data.sort_values('Date', inplace=True)       # Sort by 'Date'
 
+logreg_results = {}
 # Create an empty DataFrame to store leverage and P&L
 pnl_data = pd.DataFrame(columns=['Leverage', 'PnL', 'Interest Costs', 'Transaction Costs', '% Returns per Period', '% Returns per Annum'])
 
@@ -67,6 +67,7 @@ for leverage_factor in leverage_factors:
     	'Transaction Costs': sum(transaction_costs_total),
     	'% Returns per Period': percentage_returns, 
     	'% Returns per Annum': percentage_returns * 2,
+    	'Trade Logs': trade_logs,
     	}
 
     logreg_results['Leverage' + str(leverage_factor)] = logreg_results_factor
@@ -134,6 +135,7 @@ for leverage_factor in leverage_factors:
     	'Transaction Costs': sum(transaction_costs_total),
     	'% Returns per Period': percentage_returns, 
     	'% Returns per Annum': percentage_returns * 2,
+    	'Trade Logs': trade_logs,
     	}
 
     gbt_results['Leverage' + str(leverage_factor)] = gbt_results_factor
@@ -167,7 +169,7 @@ pnl_data = pd.DataFrame(columns=['Leverage', 'PnL', 'Interest Costs', 'Transacti
 
 # Cycle through leverage factors
 for leverage_factor in leverage_factors:
-    print("LEVERAGE FACTOR GBT: " , leverage_factor)
+    print("LEVERAGE FACTOR BENCHMARK: " , leverage_factor)
     # Apply the rolling window approach to obtain PnL values
     trade_logs, final_values, interest_costs_total, transaction_costs_total = rolling_window_train_predict_benchmark(data, 2013, 2023, 12, 6, leverage_factor=leverage_factor, annual_interest_rate=annual_interest_rate)  # 12 months training, 6 months testing
 
@@ -200,6 +202,7 @@ for leverage_factor in leverage_factors:
     	'Transaction Costs': sum(transaction_costs_total),
     	'% Returns per Period': percentage_returns, 
     	'% Returns per Annum': percentage_returns * 2,
+    	'Trade Logs': trade_logs,
     	}
 
     benchmark_results['Leverage' + str(leverage_factor)] = benchmark_results_factor
@@ -233,9 +236,9 @@ plt.show()
 
 # # Cycle through leverage factors
 # for leverage_factor in leverage_factors:
-#     print("LEVERAGE FACTOR GBT: " , leverage_factor)
+#     print("LEVERAGE FACTOR NN: " , leverage_factor)
 #     # Apply the rolling window approach to obtain PnL values
-#     trade_logs, final_values, interest_costs_total, transaction_costs_total = rolling_window_train_predict_gbt(data, 2013, 2023, 12, 6, leverage_factor=leverage_factor, annual_interest_rate=annual_interest_rate)  # 12 months training, 6 months testing
+#     trade_logs, final_values, interest_costs_total, transaction_costs_total = rolling_window_train_predict_nn(data, 2013, 2023, 12, 6, leverage_factor=leverage_factor, annual_interest_rate=annual_interest_rate)  # 12 months training, 6 months testing
 
 #     pnl_per_quarter = [x - 10000 for x in final_values]
 #     total_pnl = sum(pnl_per_quarter)

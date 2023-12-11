@@ -43,6 +43,30 @@ class TradingStrategy:
                 print("MARGIN CALL!!! this should not happen!")
                 self._sell_jpy(usd_jpy_spot_rate, current_date)
 
+    def execute_trades_perfect_future_knowledge(self):
+        for index, row in self.data.iterrows():
+            print("index: ", index, "row: ", row)
+            usd_jpy_spot_rate = row['Open']
+            current_date = row['Date']
+            daily_change_percentage = row['Daily_Change_Open_to_Close']
+
+            if self.jpy_inventory > 0:
+                self.daily_return_factors.append(1 + (daily_change_percentage * self.leverage_factor))
+
+            is_stop_loss_triggered = self._check_stop_loss(usd_jpy_spot_rate, current_date)
+
+            if is_stop_loss_triggered:
+                continue
+
+            if row['Label'] == 'Sell' and self.cash >= self.trading_lot and ( self.buy_price is None or (self.buy_price is not None and ( usd_jpy_spot_rate < self.buy_price * 0.99 or usd_jpy_spot_rate > self.buy_price * 1.01) ) ):
+                self._buy_jpy(usd_jpy_spot_rate, current_date)
+            elif row['Label'] == 'Buy' and self.jpy_inventory > 0:
+                self._sell_jpy(usd_jpy_spot_rate, current_date)
+
+            if self._check_margin_call(usd_jpy_spot_rate):
+                print("MARGIN CALL!!! this should not happen!")
+                self._sell_jpy(usd_jpy_spot_rate, current_date)
+
     def _buy_jpy(self, rate, date):
         jpy_bought = int(self.trading_lot * self.leverage_factor * rate)
         self.jpy_inventory += jpy_bought

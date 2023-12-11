@@ -4,7 +4,7 @@ import numpy as np
 from scipy.signal import find_peaks
 from sklearn.preprocessing import StandardScaler
 from pykalman import KalmanFilter
-import talib
+# import talib
 from hurst import compute_Hc
 from sklearn.utils import resample
 
@@ -54,9 +54,9 @@ class BaseModel:
         self.detect_rolling_peaks_and_troughs()
 
         self.calculate_moving_averages_and_rsi()
-        self.calculate_bollinger_bands()
-        self.calculate_bollinger_bandwidth()
-        self.calculate_bollinger_percent_b()
+        # self.calculate_bollinger_bands()
+        # self.calculate_bollinger_bandwidth()
+        # self.calculate_bollinger_percent_b()
 
         self.estimate_hurst_exponent()
         self.calculate_days_since_peaks_and_troughs()

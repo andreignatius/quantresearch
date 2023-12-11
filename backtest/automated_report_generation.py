@@ -160,6 +160,7 @@ plt.tight_layout()
 plt.savefig('gbt_pnl_v_leverage.png')
 plt.show()
 
+
 benchmark_results = {}
 # Create an empty DataFrame to store leverage and P&L
 pnl_data = pd.DataFrame(columns=['Leverage', 'PnL', 'Interest Costs', 'Transaction Costs', '% Returns per Period', '% Returns per Annum'])
@@ -290,6 +291,7 @@ plt.show()
 # # Show plot
 # plt.savefig('nn_pnl_v_leverage.png')
 # plt.show()
+
 
 
 

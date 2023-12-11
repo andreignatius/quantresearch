@@ -1,7 +1,7 @@
 
 class TradingStrategy:
 
-    def __init__(self, model, data, start_cash=10000, trading_lot=7500, stop_loss_threshold=0.1, take_profit_threshold=0.05, leverage_factor=1, margin_call_threshold=0.5, annual_interest_rate=0.03):
+    def __init__(self, model, data, start_cash=10000, trading_lot=7500, stop_loss_threshold=0.1, leverage_factor=1, margin_call_threshold=0.5, annual_interest_rate=0.03):
         self.model = model
         self.data = data
         self.cash = start_cash
@@ -9,7 +9,6 @@ class TradingStrategy:
         self.starting_cash = start_cash
         self.trading_lot = trading_lot
         self.stop_loss_threshold = stop_loss_threshold
-        self.take_profit_threshold = take_profit_threshold
         self.leverage_factor = leverage_factor
         self.trade_log = []
         self.buy_price = None
@@ -20,7 +19,7 @@ class TradingStrategy:
 
     def execute_trades(self):
         predicted_categories = self.model.predict()
-        print("CASH000: ", self.cash)
+
         for index, (row, prediction) in enumerate(zip(self.data.iterrows(), predicted_categories)):
             usd_jpy_spot_rate = row[1]['Open']
             current_date = row[1]['Date']

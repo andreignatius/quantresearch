@@ -415,10 +415,10 @@ class BaseModel:
         # # Filter the data for training and testing periods
         # self.train_data = self.data[(self.data['Date'] >= self.train_start) & (self.data['Date'] < self.train_end)]
         # self.test_data  = self.data[(self.data['Date'] >= self.test_start) & (self.data['Date'] < self.test_end)]
+        
         # Filter the data for training and testing periods and create copies
         self.train_data = self.data[(self.data['Date'] >= self.train_start) & (self.data['Date'] < self.train_end)].copy()
         self.test_data = self.data[(self.data['Date'] >= self.test_start) & (self.data['Date'] < self.test_end)].copy()
-
 
         # Calculate the age of each data point in days
         current_date = self.train_end
@@ -428,10 +428,7 @@ class BaseModel:
         decay_rate = 0.05  # This is a parameter you can tune
         self.train_data['Weight'] = np.exp(-decay_rate * self.train_data['DataAge'])
 
-        # Now sample from your data with these weights
-        # self.train_data = resample(self.train_data, n_samples=1000, replace=False, weights='Weight')
-        # self.train_data = self.train_data.sample(n=1000, replace=False, weights=self.train_data['Weight'])
-
+        # Now sample from training data with these weights
         sample_size = min(len(self.train_data), 1500)
         self.train_data = self.train_data.sample(n=sample_size, replace=False, weights=self.train_data['Weight'])
         self.train_data.sort_values('Date', inplace=True)

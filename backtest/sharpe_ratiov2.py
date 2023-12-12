@@ -60,38 +60,44 @@ with open('logreg_pnl_v_leverage.json', 'r') as file:
 # Extract the PnL Distribution for Leverage4 from the first JSON file
 leverage_4_pnl_distribution_logreg = data_logreg['Leverage4']['PnL Distribution']
 # Standardize the data
-from sklearn.preprocessing import StandardScaler
-scaler = StandardScaler()
-# leverage_4_pnl_distribution_logreg = scaler.fit_transform(np.array(leverage_4_pnl_distribution_logreg).reshape(-1,1))
+from sklearn.preprocessing import MinMaxScaler
+scaler = MinMaxScaler()
+leverage_4_pnl_distribution_logreg_scaled = scaler.fit_transform(np.array(leverage_4_pnl_distribution_logreg).reshape(-1,1))
+leverage_4_pnl_distribution_logreg_scaled = leverage_4_pnl_distribution_logreg_scaled.flatten()
+# leverage_4_pnl_distribution_logreg_scaled = list(leverage_4_pnl_distribution_logreg_scaled)
+
 # Calculate the standard deviation for Leverage4 from the first JSON file
 std_dev_logreg = np.std(leverage_4_pnl_distribution_logreg)
 mean_logreg = np.mean(leverage_4_pnl_distribution_logreg)
+std_dev_logreg_scaled = leverage_4_pnl_distribution_logreg_scaled.std()
 
 # Load the JSON data from the second file (gbt_pnl_v_leverage.json)
 with open('gbt_pnl_v_leverage.json', 'r') as file:
     data_gbt = json.load(file)
 # Extract the PnL Distribution for Leverage4 from the second JSON file
 leverage_4_pnl_distribution_gbt = data_gbt['Leverage4']['PnL Distribution']
-# leverage_4_pnl_distribution_gbt = scaler.fit_transform(np.array(leverage_4_pnl_distribution_gbt).reshape(-1,1))
+leverage_4_pnl_distribution_gbt_scaled = scaler.fit_transform(np.array(leverage_4_pnl_distribution_gbt).reshape(-1,1))
 # Calculate the standard deviation for Leverage4 from the second JSON file
 std_dev_gbt = np.std(leverage_4_pnl_distribution_gbt)
 mean_gbt = np.mean(leverage_4_pnl_distribution_gbt)
+std_dev_gbt_scaled = leverage_4_pnl_distribution_gbt_scaled.std()
 
 # Load the JSON data from the second file (nn_pnl_v_leverage.json)
 with open('nn_pnl_v_leverage.json', 'r') as file:
     data_nn = json.load(file)
 # Extract the PnL Distribution for Leverage4 from the second JSON file
 leverage_4_pnl_distribution_nn = data_nn['Leverage4']['PnL Distribution']
-# leverage_4_pnl_distribution_nn = scaler.fit_transform(np.array(leverage_4_pnl_distribution_nn).reshape(-1,1))
+leverage_4_pnl_distribution_nn_scaled = scaler.fit_transform(np.array(leverage_4_pnl_distribution_nn).reshape(-1,1))
 # Calculate the standard deviation for Leverage4 from the second JSON file
 std_dev_nn = np.std(leverage_4_pnl_distribution_nn)
 mean_nn = np.mean(leverage_4_pnl_distribution_nn)
+std_dev_nn_scaled = leverage_4_pnl_distribution_nn_scaled.std()
 
 sharpe_ratio_logreg = mean_logreg/std_dev_logreg
 sharpe_ratio_gbt = mean_gbt/std_dev_gbt
 sharpe_ratio_nn = mean_nn/std_dev_nn
 
-print(mean_nn, std_dev_nn, sharpe_ratio_nn, sharpe_ratio_logreg,sharpe_ratio_gbt)
+print("Deviations:", std_dev_logreg_scaled, std_dev_gbt_scaled, std_dev_nn_scaled, 'Mean Return:', mean_logreg/10000, mean_gbt/10000, mean_nn/10000, 'Sharpe Ratio:', sharpe_ratio_nn, sharpe_ratio_logreg,sharpe_ratio_gbt)
 
 # # Create a DataFrame to save the output
 # data = {

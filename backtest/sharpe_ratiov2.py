@@ -59,87 +59,107 @@ with open('logreg_pnl_v_leverage.json', 'r') as file:
     data_logreg = json.load(file)
 # Extract the PnL Distribution for Leverage4 from the first JSON file
 leverage_4_pnl_distribution_logreg = data_logreg['Leverage4']['PnL Distribution']
+# Standardize the data
+from sklearn.preprocessing import StandardScaler
+scaler = StandardScaler()
+# leverage_4_pnl_distribution_logreg = scaler.fit_transform(np.array(leverage_4_pnl_distribution_logreg).reshape(-1,1))
 # Calculate the standard deviation for Leverage4 from the first JSON file
 std_dev_logreg = np.std(leverage_4_pnl_distribution_logreg)
+mean_logreg = np.mean(leverage_4_pnl_distribution_logreg)
 
 # Load the JSON data from the second file (gbt_pnl_v_leverage.json)
 with open('gbt_pnl_v_leverage.json', 'r') as file:
     data_gbt = json.load(file)
 # Extract the PnL Distribution for Leverage4 from the second JSON file
 leverage_4_pnl_distribution_gbt = data_gbt['Leverage4']['PnL Distribution']
+# leverage_4_pnl_distribution_gbt = scaler.fit_transform(np.array(leverage_4_pnl_distribution_gbt).reshape(-1,1))
 # Calculate the standard deviation for Leverage4 from the second JSON file
 std_dev_gbt = np.std(leverage_4_pnl_distribution_gbt)
+mean_gbt = np.mean(leverage_4_pnl_distribution_gbt)
 
 # Load the JSON data from the second file (nn_pnl_v_leverage.json)
 with open('nn_pnl_v_leverage.json', 'r') as file:
     data_nn = json.load(file)
 # Extract the PnL Distribution for Leverage4 from the second JSON file
 leverage_4_pnl_distribution_nn = data_nn['Leverage4']['PnL Distribution']
+# leverage_4_pnl_distribution_nn = scaler.fit_transform(np.array(leverage_4_pnl_distribution_nn).reshape(-1,1))
 # Calculate the standard deviation for Leverage4 from the second JSON file
 std_dev_nn = np.std(leverage_4_pnl_distribution_nn)
+mean_nn = np.mean(leverage_4_pnl_distribution_nn)
 
-# Create a DataFrame to save the output
-data = {
-    'JSON File': ['logreg_pnl_v_leverage.json','gbt_pnl_v_leverage.json','nn_pnl_v_leverage.json'],
-    'Standard Deviation': [std_dev_logreg, std_dev_gbt, std_dev_nn]
-}
+sharpe_ratio_logreg = mean_logreg/std_dev_logreg
+sharpe_ratio_gbt = mean_gbt/std_dev_gbt
+sharpe_ratio_nn = mean_nn/std_dev_nn
 
-df = pd.DataFrame(data)
-standard_deviation = df.iloc[:, 1]
-standard_deviation = pd.DataFrame(standard_deviation, columns=['Standard Deviation'])
+print(mean_nn, std_dev_nn, sharpe_ratio_nn, sharpe_ratio_logreg,sharpe_ratio_gbt)
 
-# # Reset the indices of both DataFrames
-combined_filtered_df.reset_index(drop=True, inplace=True)
-standard_deviation.reset_index(drop=True, inplace=True)
-
-# # Concatenate the existing DataFrame with the new DataFrame containing the second column
-combined_filtered_df = pd.concat([combined_filtered_df, standard_deviation], axis=1)
-
-# # Create a list of values for the new column
-new_column_values = ['logreg_lev4', 'gbt_lev4','nn_lev4']
-
-# # Insert the new column at the first position (index 0)
-combined_filtered_df.insert(0,'Model', new_column_values)
-
-####################################
-## GET THE MARKET RETURNS
-####################################
-
-# Load the Forex data
-file_path = 'data/USD_JPY_YF.csv'
-forex_data = pd.read_csv(file_path)
-
-# Generate Market Return
-investment = 10000  # Initial investment in USD
-
-# Filter the forex_data DataFrame for 'Date' starting with '2013'
-first_close_2013 = forex_data[forex_data['Date'].str.startswith('2013')]['Close'].iloc[0]
-
-# Calculate the market return using the 'Close' values
-starting_price = first_close_2013
-final_price = forex_data['Close'].iloc[-1]
-
-# Calculate the gains in the exchange rate
-gains = (starting_price-final_price)/final_price
-
-# Generate Output
-market_returns = investment*(gains)
-
-####################################
-## CALCULATIONS AND SHARPE RATIO
-####################################
-combined_filtered_df['market_returns'] = market_returns
-combined_filtered_df['excess_returns'] = combined_filtered_df['PnL']-market_returns
-num_values_pnl = len(data_1['Leverage3']['PnL Distribution'])
-combined_filtered_df['mean_returns'] = combined_filtered_df['excess_returns']/num_values_pnl
-combined_filtered_df['sharpe_ratio'] = combined_filtered_df['mean_returns']/combined_filtered_df['Standard Deviation']
-
-####################################
-## CALCULATE EXCESS RETURNS
-####################################
-
-# Display the transposed DataFrame
-print(combined_filtered_df)
-
-# Save the transposed DataFrame as a CSV file
-combined_filtered_df.to_csv('sharpe_ratiov2.csv')
+# # Create a DataFrame to save the output
+# data = {
+#     'JSON File': ['logreg_pnl_v_leverage.json','gbt_pnl_v_leverage.json','nn_pnl_v_leverage.json'],
+#     'Standard Deviation': [std_dev_logreg, std_dev_gbt, std_dev_nn], 'Mean':[mean_logreg,mean_gbt,mean_nn]
+# }
+#
+# df = pd.DataFrame(data)
+# standard_deviation = df.iloc[:, 1]
+# Mean = df.iloc[:, 2]
+# standard_deviation = pd.DataFrame(standard_deviation, columns=['Standard Deviation'])
+# mean = pd.DataFrame(standard_deviation, columns=['Mean'])
+#
+# # # Reset the indices of both DataFrames
+# combined_filtered_df.reset_index(drop=True, inplace=True)
+# standard_deviation.reset_index(drop=True, inplace=True)
+# mean.reset_index(drop=True, inplace=True)
+#
+# # # Concatenate the existing DataFrame with the new DataFrame containing the second column
+# combined_filtered_df = pd.concat([combined_filtered_df, standard_deviation, mean], axis=1)
+#
+# # # Create a list of values for the new column
+# new_column_values = ['logreg_lev4', 'gbt_lev4','nn_lev4']
+#
+# # # Insert the new column at the first position (index 0)
+# combined_filtered_df.insert(0,'Model', new_column_values)
+#
+# ####################################
+# ## GET THE MARKET RETURNS
+# ####################################
+#
+# # Load the Forex data
+# file_path = 'data/USD_JPY_YF.csv'
+# forex_data = pd.read_csv(file_path)
+#
+# # Generate Market Return
+# investment = 10000  # Initial investment in USD
+#
+# # Filter the forex_data DataFrame for 'Date' starting with '2013'
+# first_close_2013 = forex_data[forex_data['Date'].str.startswith('2013')]['Close'].iloc[0]
+#
+# # Calculate the market return using the 'Close' values
+# starting_price = first_close_2013
+# final_price = forex_data['Close'].iloc[-1]
+#
+# # Calculate the gains in the exchange rate
+# gains = (starting_price-final_price)/final_price
+#
+# # Generate Output
+# market_returns = investment*(gains)
+#
+# ####################################
+# ## CALCULATIONS AND SHARPE RATIO
+# ####################################
+# combined_filtered_df['market_returns'] = market_returns
+# combined_filtered_df['excess_returns'] = combined_filtered_df['mean_returns']-market_returns
+# num_values_pnl = len(data_1['Leverage3']['PnL Distribution'])
+# combined_filtered_df['mean_returns'] = combined_filtered_df['excess_returns']/num_values_pnl
+# combined_filtered_df['sharpe_ratio'] = combined_filtered_df['mean_returns']/combined_filtered_df['Standard Deviation']
+#
+# ####################################
+# ## CALCULATE EXCESS RETURNS
+# ####################################
+#
+# # Display the transposed DataFrame
+# print(combined_filtered_df)
+# print(leverage_4_pnl_distribution_gbt)
+# print(combined_filtered_df['mean_returns'])
+#
+# # Save the transposed DataFrame as a CSV file
+# combined_filtered_df.to_csv('sharpe_ratiov2.csv')

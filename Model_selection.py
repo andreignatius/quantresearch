@@ -55,7 +55,7 @@ from sklearn.metrics import accuracy_score
 from sklearn.metrics import confusion_matrix
 from sklearn.metrics import classification_report
 
-Features = pd.read_csv("Features.csv",index_col = [0])
+Features = pd.read_csv("feature_tuning_and_selection/feature_parameter_tuning.csv",index_col = [0])
 input_features = Features.columns.tolist()[1:-1]
 output_feature = Features.columns.tolist()[-1]
 print("The input feature: ",input_features)

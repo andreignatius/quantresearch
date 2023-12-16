@@ -1,6 +1,6 @@
 # quantresearch
 
-This repository is an exploration of signal processing indicators if they could yield superior prediction signals for detecting peaks/troughs in forex trading
+This repository is an exploration of signal processing indicators if they could yield superior prediction signals for detecting peaks/troughs in forex trading (USD / JPY)
 
 To run this project, create your virtual environment via conda (optional):
 ```
